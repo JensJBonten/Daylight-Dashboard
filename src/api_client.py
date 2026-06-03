@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from .measurement import DaylightMeasurement
 
 import requests
 
+try:
+    from .measurement import DaylightMeasurement
+except ImportError:
+    from measurement import DaylightMeasurement
 
 MET_SUNRISE_URL = "https://api.met.no/weatherapi/sunrise/3.0/sun"
 
@@ -59,14 +62,10 @@ def parse_sunrise_response(sunrise_response: dict) -> dict:
     """Henter ut soloppgang og solnedgang fra MET Sunrise-responsen."""
 
     properties = sunrise_response["properties"]
-
     sunrise_time = properties["sunrise"]["time"]
     sunset_time = properties["sunset"]["time"]
 
-    return {
-        "sunrise": sunrise_time,
-        "sunset": sunset_time,
-    }
+    return {"sunrise": sunrise_time,"sunset": sunset_time}
     
 def calculate_day_length(sunrise_time: str, sunset_time: str) -> str:
     """Funksjonen beregner dagslengde fra soloppgang og solnedgang."""
@@ -84,31 +83,24 @@ def calculate_day_length(sunrise_time: str, sunset_time: str) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
-def create_measurement_from_sunrise_data(
-    sunrise_response: dict,
-    location: ApiLocation,
-) -> DaylightMeasurement:
+def create_measurement_from_sunrise_data(sunrise_response: dict, location: ApiLocation) -> DaylightMeasurement:
     """Lager en DaylightMeasurement fra MET Sunrise-responsen."""
 
     parsed_data = parse_sunrise_response(sunrise_response)
-
     sunrise_time = parsed_data["sunrise"]
     sunset_time = parsed_data["sunset"]
-
     day_length = calculate_day_length(sunrise_time, sunset_time)
 
     # Dato hentes fra sunrise-tiden. Vi trenger bare YYYY-MM-DD i modellen.
     measurement_date = datetime.fromisoformat(sunrise_time).date().isoformat()
 
-    return DaylightMeasurement(
-        date=measurement_date,
-        location_name=location.name,
-        day_length=day_length,
-        sunrise=sunrise_time,
-        sunset=sunset_time,
-        daily_increase="00:00:00",
-        total_increase="00:00:00",
-    )
+    return DaylightMeasurement(date=measurement_date, 
+                               location_name=location.name, 
+                               day_length=day_length, 
+                               sunrise=sunrise_time, 
+                               sunset=sunset_time, 
+                               daily_increase="00:00:00", 
+                               total_increase="00:00:00")
 
 
 

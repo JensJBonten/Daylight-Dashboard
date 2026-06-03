@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from datetime import date
+
 import pandas as pd
 import streamlit as st
 
+from api_client import get_default_location
+from measurement_service import fetch_and_save_measurement
 from sqlite_storage import load_measurements
 
 
@@ -24,13 +28,9 @@ def load_dashboard_data() -> tuple[list, pd.DataFrame]:
     measurements_dataframe["date"] = pd.to_datetime(measurements_dataframe["date"])
 
     # Konverterer HH:MM:SS-strenger til tallverdier for grafer.
-    measurements_dataframe["Day length (hours)"] = (
-        pd.to_timedelta(measurements_dataframe["day_length"]).dt.total_seconds() / 3600
-    )
-    measurements_dataframe["Daily increase (minutes)"] = (
-        pd.to_timedelta(measurements_dataframe["daily_increase"]).dt.total_seconds() / 60
-    )
-
+    measurements_dataframe["Day length (hours)"] = (pd.to_timedelta(measurements_dataframe["day_length"]).dt.total_seconds() / 3600)
+    measurements_dataframe["Daily increase (minutes)"] = (pd.to_timedelta(measurements_dataframe["daily_increase"]).dt.total_seconds() / 60)
+    
     return measurements, measurements_dataframe
 
 
@@ -46,12 +46,7 @@ def render_location_filter(measurements_dataframe: pd.DataFrame) -> str:
     """Rendering a location selecter and returning the selected location."""
         
     available_locations = sorted(measurements_dataframe["location_name"].unique())
-        
-    selected_location = st.selectbox(
-        "Selected location",
-        options=available_locations,
-    )
-        
+    selected_location = st.selectbox("Selected location", options=available_locations)  
     return selected_location
 
 
@@ -91,19 +86,11 @@ def render_charts(measurements_dataframe: pd.DataFrame) -> None:
     
     st.write("Day length measured in hours: ")
     
-    st.line_chart(
-        measurements_dataframe,
-        x="date",
-        y="Day length (hours)",
-    )
+    st.line_chart(measurements_dataframe, x="date", y="Day length (hours)")
 
     st.write("Daily increase measured in minutes.")
 
-    st.bar_chart(
-        measurements_dataframe,
-        x="date",
-        y="Daily increase (minutes)",
-    )
+    st.bar_chart(measurements_dataframe, x="date", y="Daily increase (minutes)")
 
 
 def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
@@ -114,6 +101,7 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
     
     # Lager en egen DataFrame for visningen, slik at formatering her ikke endrer grafdataene.
     display_dataframe = measurements_dataframe.copy()
+    display_dataframe = display_dataframe.sort_values("date", ascending= False)
     
     # Viser bare datoen, uten klokkeslettet pandas legger til.
     display_dataframe["date"] = display_dataframe["date"].dt.date
@@ -151,6 +139,21 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
         height=400,
     )
 
+def render_get_weatherdata_button() -> None:
+    """Render a button to fetch today's daylight data from MET Sunrise API."""
+
+    st.divider()
+    st.subheader("Update today's daylight data")
+    st.write("Get today's sunrise and sunset data.")
+
+    if st.button("Today's daylight data"):
+        location = get_default_location()
+        measurement = fetch_and_save_measurement(location, date.today())
+
+        st.success(
+            f"Got daylight measurement for {measurement.location_name} "
+            f"on {measurement.date}"
+        )
 
 def main() -> None:
     """Run the Streamlit dashboard."""
@@ -161,18 +164,25 @@ def main() -> None:
         layout="wide",
     )
 
+    st.title("Daylight Dashboard")
+    st.write("A dashboard for daylight and seasonal development.")
+
+    # Knappen kjøres før vi laster data til visning.
+    # Da kan en ny API-måling lagres i SQLite før dashboardet bygges.
+    render_get_weatherdata_button()
+
     measurements, measurements_dataframe = load_dashboard_data()
 
     if not measurements:
-        st.title("Daylight Dashboard")
-        st.warning("No SQLite measurements found. Run `python -m src.main --save-sqlite --location Grua` first.")
-    
+        st.warning(
+            "No SQLite measurements found. "
+            "Run `python -m src.main --save-sqlite --location Grua` first, "
+            "or use the button above."
+        )
         return
 
-    # Siste målingen blir brukt til nøkkeltallene øverst.
-    measurements, measurements_dataframe = load_dashboard_data()
+    st.caption(f"Loaded {len(measurements)} measurements")
 
-    render_header(len(measurements))
     selected_location = render_location_filter(measurements_dataframe)
 
     # Filtrerer målingslisten til valgt sted for nøkkeltallene øverst.
