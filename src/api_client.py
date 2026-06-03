@@ -11,8 +11,6 @@ MET_SUNRISE_URL = "https://api.met.no/weatherapi/sunrise/3.0/sun"
 
 @dataclass
 class ApiLocation:
-    """Data for området når jeg kaller på dagslysdata fra MET Sunrise API."""
-
     name: str
     latitude: float
     longitude: float
@@ -31,11 +29,9 @@ def get_default_location() -> ApiLocation:
 def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
     """Henter soloppgang og solnedgang fra MET Sunrise API."""
 
-    # MET anbefaler avrundede koordinater for bedre caching.
     rounded_latitude = round(location.latitude, 4)
     rounded_longitude = round(location.longitude, 4)
 
-    # MET krever at applikasjoner identifiserer seg med User-Agent.
     headers = {
         "User-Agent": "DaylightDashboard/0.1 github.com/JensBonten/daylight-dashboard",
         "Accept": "application/json",
@@ -54,11 +50,22 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
         headers=headers,
         timeout=10,
     )
-
-    # Gir en tydelig feil dersom API-et svarer med 400, 403 eller 500.
     response.raise_for_status()
 
     return response.json()
+
+def parse_sunrise_response(sunrise_response: dict) -> dict:
+    """Henter ut soloppgang og solnedgang fra MET Sunrise-responsen."""
+
+    properties = sunrise_response["properties"]
+
+    sunrise_time = properties["sunrise"]["time"]
+    sunset_time = properties["sunset"]["time"]
+
+    return {
+        "sunrise": sunrise_time,
+        "sunset": sunset_time,
+    }
 
 
 def describe_api_goal() -> list[str]:
