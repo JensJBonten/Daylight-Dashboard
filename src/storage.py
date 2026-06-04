@@ -14,7 +14,6 @@ def load_measurements() -> list[DaylightMeasurement]:
     if not STORAGE_FILE.exists():
         return []
 
-    # Leser rå JSON-data og gjør hvert element tilbake til et DaylightMeasurement-objekt.
     with open(STORAGE_FILE, "r", encoding="utf-8") as file:
         raw_measurement_data = json.load(file)
 
@@ -25,22 +24,12 @@ def load_measurements() -> list[DaylightMeasurement]:
 
 def save_measurements(measurements: list[DaylightMeasurement]) -> None:
     """Skriver alle målinger til disk som JSON."""
-    # Oppretter data-mappen hvis den ikke allerede finnes.
     STORAGE_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    # Konverterer objektene til dictionaries før json.dump kan lagre dem.
     measurement_records = [measurement.to_dict() for measurement in measurements]
 
     with open(STORAGE_FILE, "w", encoding="utf-8") as file:
         json.dump(measurement_records, file, indent=4)
-
-
-def add_measurement(measurement: DaylightMeasurement) -> None:
-    """Legger til én ny måling i den lagrede samlingen."""
-    # Leser eksisterende innhold først, slik at vi ikke overskriver gamle målinger.
-    measurements = load_measurements()
-    measurements.append(measurement)
-    save_measurements(measurements)
 
 
 def get_latest_measurement() -> DaylightMeasurement | None:

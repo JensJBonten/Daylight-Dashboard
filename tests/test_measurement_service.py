@@ -23,7 +23,10 @@ def test_fetch_measurement_for_location_uses_api_response(monkeypatch):
     def fake_fetch_sunrise_data(location, measurement_date):
         return fake_response
 
-    monkeypatch.setattr("src.measurement_service.fetch_sunrise_data",fake_fetch_sunrise_data,)
+    monkeypatch.setattr(
+        "src.measurement_service.fetch_sunrise_data",
+        fake_fetch_sunrise_data,
+    )
 
     location = ApiLocation(name="Grua", latitude=60.257, longitude=10.662)
 

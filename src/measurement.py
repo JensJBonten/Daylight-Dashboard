@@ -15,7 +15,6 @@ class DaylightMeasurement:
     total_increase: str
 
     def to_dict(self) -> dict:
-        # Gjør målingen om til en dictionary som kan lagres som JSON.
         return {
             "date": self.date,
             "location_name": self.location_name,
@@ -28,7 +27,6 @@ class DaylightMeasurement:
 
     @classmethod
     def from_dict(cls, measurement_data: dict) -> "DaylightMeasurement":
-        # Bygger et DaylightMeasurement-objekt fra data som er lest fra JSON.
         return cls(
             date=measurement_data["date"],
             location_name=measurement_data["location_name"],

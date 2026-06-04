@@ -1,8 +1,9 @@
-from src.api_client import get_default_location, describe_api_goal, parse_sunrise_response
 from src.api_client import (
     ApiLocation,
     calculate_day_length,
     create_measurement_from_sunrise_data,
+    get_default_location,
+    parse_sunrise_response,
 )
 
 
@@ -14,15 +15,6 @@ def test_get_default_location_returns_grua():
     assert location.name == "Grua"
     assert isinstance(location.latitude, float)
     assert isinstance(location.longitude, float)
-
-
-def test_describe_api_goal_returns_expected_steps():
-    """Check that the API integration goal is documented in code."""
-
-    api_goal = describe_api_goal()
-
-    assert "Convert API response into DaylightMeasurement objects" in api_goal
-    assert "Store API measurements in SQLite with source='api'" in api_goal
 
 
 def test_parse_sunrise_response_extracts_sunrise_and_sunset():

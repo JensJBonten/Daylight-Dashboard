@@ -29,25 +29,21 @@ def load_dashboard_data() -> tuple[list, pd.DataFrame]:
     measurements_dataframe["date"] = pd.to_datetime(measurements_dataframe["date"])
 
     # Konverterer HH:MM:SS-strenger til tallverdier for grafer.
-    measurements_dataframe["Day length (hours)"] = (pd.to_timedelta(measurements_dataframe["day_length"]).dt.total_seconds() / 3600)
-    measurements_dataframe["Daily increase (minutes)"] = (pd.to_timedelta(measurements_dataframe["daily_increase"]).dt.total_seconds() / 60)
-    
+    measurements_dataframe["Day length (hours)"] = (
+        pd.to_timedelta(measurements_dataframe["day_length"]).dt.total_seconds() / 3600
+    )
+    measurements_dataframe["Daily increase (minutes)"] = (
+        pd.to_timedelta(measurements_dataframe["daily_increase"]).dt.total_seconds() / 60
+    )
+
     return measurements, measurements_dataframe
 
 
-def render_header(measurement_count: int) -> None:
-    """Render the dashboard title and short intro text."""
-
-    st.title("Daylight Dashboard")
-    st.write("A dashboard for daylight and seasonal development.")
-    st.caption(f"Loaded {measurement_count} measurements")
- 
-    
 def render_location_filter(measurements_dataframe: pd.DataFrame) -> str:
-    """Rendering a location selecter and returning the selected location."""
-        
+    """Render a location selector and return the selected location."""
+
     available_locations = sorted(measurements_dataframe["location_name"].unique())
-    selected_location = st.selectbox("Selected location", options=available_locations)  
+    selected_location = st.selectbox("Selected location", options=available_locations)
     return selected_location
 
 
@@ -57,23 +53,23 @@ def render_latest_metrics(latest_measurement) -> None:
     st.subheader(f"Latest measurement — {latest_measurement.location_name}")
     st.caption(latest_measurement.date)
 
-    col1, col2, col3 = st.columns(3)
+    day_length_column, sunrise_column, sunset_column = st.columns(3)
 
-    with col1:
+    with day_length_column:
         st.metric("Day length", latest_measurement.day_length)
 
-    with col2:
+    with sunrise_column:
         st.metric("Sunrise", format_time_for_display(latest_measurement.sunrise))
 
-    with col3:
+    with sunset_column:
         st.metric("Sunset", format_time_for_display(latest_measurement.sunset))
 
-    col4, col5 = st.columns(2)
+    daily_increase_column, total_increase_column = st.columns(2)
 
-    with col4:
+    with daily_increase_column:
         st.metric("Daily increase", latest_measurement.daily_increase)
 
-    with col5:
+    with total_increase_column:
         st.metric("Total increase", latest_measurement.total_increase)
 
 
@@ -84,9 +80,8 @@ def render_charts(measurements_dataframe: pd.DataFrame) -> None:
     st.subheader("Day length over time")
 
     st.subheader("Light development per day.")
-    
     st.write("Day length measured in hours: ")
-    
+
     st.line_chart(measurements_dataframe, x="date", y="Day length (hours)")
 
     st.write("Daily increase measured in minutes.")
@@ -95,21 +90,19 @@ def render_charts(measurements_dataframe: pd.DataFrame) -> None:
 
 
 def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
-    """Render the saved measurements as a table."""  
-    
+    """Render the saved measurements as a table."""
+
     st.divider()
     st.subheader("Lagrede målinger")
-    
+
     # Lager en egen DataFrame for visningen, slik at formatering her ikke endrer grafdataene.
     display_dataframe = measurements_dataframe.copy()
-    display_dataframe = display_dataframe.sort_values("date", ascending= False)
-    
+    display_dataframe = display_dataframe.sort_values("date", ascending=False)
+
     # Viser bare datoen, uten klokkeslettet pandas legger til.
     display_dataframe["date"] = display_dataframe["date"].dt.date
     display_dataframe["sunrise"] = display_dataframe["sunrise"].map(format_time_for_display)
     display_dataframe["sunset"] = display_dataframe["sunset"].map(format_time_for_display)
-    
-    # Kolonner som er relevante for brukeren.
     visible_columns = [
         "date",
         "location_name",
@@ -119,10 +112,9 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
         "daily_increase",
         "total_increase",
     ]
-    
+
     display_dataframe = display_dataframe[visible_columns]
 
-    # Gir kolonnene mer lesbare navn i dashboardet.
     display_dataframe = display_dataframe.rename(
         columns={
             "date": "Date",
@@ -142,6 +134,7 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
         height=400,
     )
 
+
 def render_get_weatherdata_button() -> None:
     """Render a button to fetch today's daylight data from MET Sunrise API."""
 
@@ -157,6 +150,7 @@ def render_get_weatherdata_button() -> None:
             f"Got daylight measurement for {measurement.location_name} "
             f"on {measurement.date}"
         )
+
 
 def main() -> None:
     """Run the Streamlit dashboard."""

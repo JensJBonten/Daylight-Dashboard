@@ -95,16 +95,13 @@ def main() -> None:
     """Kjører hele arbeidsflyten fra Excel-fil til utskrift, lagring og valgfri graf."""
     args = parse_args()
 
-    # Leser Excel-filen og normaliserer kolonnenavn og tidsverdier.
     daylight_dataframe = load_daylight_data(args.file)
 
-    # Skriver en kort oppsummering av datasettet i terminalen.
     print("Daylight Measurement Dashboard")
     print("Dataset summary")
     for line in build_summary(daylight_dataframe):
         print(f"- {line}")
 
-    # Viser de første radene, med mindre brukeren har valgt --preview 0.
     print_preview(daylight_dataframe, args.preview)
 
     # Konverterer DataFrame-radene til DaylightMeasurement-objekter.
@@ -116,7 +113,7 @@ def main() -> None:
         # Dette er den opprinnelige JSON-lagringen.
         save_measurements(measurements)
 
-        # Leser siste måling tilbake fra JSON for å bekrefte at lagringen fungerer.
+        # Leser tilbake siste måling for å bekrefte at lagringen fungerer.
         latest_measurement = get_latest_measurement()
 
         if latest_measurement:
@@ -127,14 +124,13 @@ def main() -> None:
         # UNIQUE(date, location_name) i databasen hindrer duplikater.
         save_sqlite_measurements(measurements)
 
-        # Leser siste måling tilbake fra SQLite for å bekrefte at lagringen fungerer.
+        # Leser tilbake siste måling for å bekrefte at lagringen fungerer.
         latest_sqlite_measurement = get_latest_sqlite_measurement()
 
         if latest_sqlite_measurement:
             print_measurement("Latest SQLite measurement", latest_sqlite_measurement)
 
     if args.plot:
-        # Lager en PNG-graf bare når brukeren sender inn --plot.
         save_plot(daylight_dataframe, args.plot)
         print(f"\nSaved plot to {args.plot}")
 

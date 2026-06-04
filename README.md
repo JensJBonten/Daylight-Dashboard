@@ -54,7 +54,9 @@ src/
 
 tests/
   test_measurement_mapper.py
-  test_reporting.py
+  test_measurement_service.py
+  test_api_client.py
+  test_formatting.py
   test_sqlite_storage.py
   test_storage.py
 
@@ -126,9 +128,6 @@ This project is still ongoing while I implement new solutions and continue learn
 
 ## Next Steps
 
-- Parse MET Sunrise API responses into sunrise and sunset values
-- Convert API data into `DaylightMeasurement` objects
-- Store API measurements in SQLite with `source='api'`
 - Add tests for Excel column normalization and time conversion edge cases
 - Add clearer validation messages for unexpected workbook formats
 - Keep refining naming, comments, and module boundaries as the project grows

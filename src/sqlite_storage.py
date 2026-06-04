@@ -15,6 +15,19 @@ except ImportError:
 DATABASE_FILE = Path("data") / "daylight.db"
 
 
+def _measurement_from_row(database_row: tuple) -> DaylightMeasurement:
+    """Build a DaylightMeasurement from a SQLite result row."""
+    return DaylightMeasurement(
+        date=database_row[0],
+        location_name=database_row[1],
+        day_length=database_row[2],
+        sunrise=database_row[3],
+        sunset=database_row[4],
+        daily_increase=database_row[5],
+        total_increase=database_row[6],
+    )
+
+
 def initialize_database(database_file: Path = DATABASE_FILE) -> None:
     """Create a SQLite database and measurements table if they do not exist."""
 
@@ -172,18 +185,7 @@ def load_measurements(
     # database_rows er en liste med tupler, eksempelvis:
     # [("2026-03-10", "Grua", "11:17:00", ...)]
     # Derfor gjøres hver tuple om til et DaylightMeasurement-objekt.
-    return [
-        DaylightMeasurement(
-            date=database_row[0],
-            location_name=database_row[1],
-            day_length=database_row[2],
-            sunrise=database_row[3],
-            sunset=database_row[4],
-            daily_increase=database_row[5],
-            total_increase=database_row[6],
-        )
-        for database_row in database_rows
-    ]
+    return [_measurement_from_row(database_row) for database_row in database_rows]
 
 
 def get_latest_measurement(
@@ -217,12 +219,4 @@ def get_latest_measurement(
     if latest_database_row is None:
         return None
 
-    return DaylightMeasurement(
-        date=latest_database_row[0],
-        location_name=latest_database_row[1],
-        day_length=latest_database_row[2],
-        sunrise=latest_database_row[3],
-        sunset=latest_database_row[4],
-        daily_increase=latest_database_row[5],
-        total_increase=latest_database_row[6],
-    )
+    return _measurement_from_row(latest_database_row)
