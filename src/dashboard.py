@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from api_client import get_default_location
+from formatting import format_time_for_display
 from measurement_service import fetch_and_save_measurement
 from sqlite_storage import load_measurements
 
@@ -62,10 +63,10 @@ def render_latest_metrics(latest_measurement) -> None:
         st.metric("Day length", latest_measurement.day_length)
 
     with col2:
-        st.metric("Sunrise", latest_measurement.sunrise)
+        st.metric("Sunrise", format_time_for_display(latest_measurement.sunrise))
 
     with col3:
-        st.metric("Sunset", latest_measurement.sunset)
+        st.metric("Sunset", format_time_for_display(latest_measurement.sunset))
 
     col4, col5 = st.columns(2)
 
@@ -105,6 +106,8 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
     
     # Viser bare datoen, uten klokkeslettet pandas legger til.
     display_dataframe["date"] = display_dataframe["date"].dt.date
+    display_dataframe["sunrise"] = display_dataframe["sunrise"].map(format_time_for_display)
+    display_dataframe["sunset"] = display_dataframe["sunset"].map(format_time_for_display)
     
     # Kolonner som er relevante for brukeren.
     visible_columns = [

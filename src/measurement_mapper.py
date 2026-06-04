@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pandas as pd
 
+from .formatting import format_duration
 from .measurement import DaylightMeasurement
-from .reporting import format_duration
+
 
 
 def measurements_from_dataframe(
