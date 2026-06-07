@@ -8,8 +8,6 @@ try:
 except ImportError:
     from measurement import DaylightMeasurement
 
-# Mange kommentarer fordi jeg er fersk på SQlite.
-
 # SQLite-databasen lagres som én fil på disk.
 # Denne filen blir opprettet automatisk første gang vi kobler til den.
 DATABASE_FILE = Path("data") / "daylight.db"
@@ -245,15 +243,7 @@ def get_previous_measurement_for_location(
     if prev_database_row is None:
         return None
 
-    return DaylightMeasurement(
-        date=prev_database_row[0],
-        location_name=prev_database_row[1],
-        day_length=prev_database_row[2],
-        sunrise=prev_database_row[3],
-        sunset=prev_database_row[4],
-        daily_increase=prev_database_row[5],
-        total_increase=prev_database_row[6],
-    )
+    return _measurement_from_row(prev_database_row)
 
 def get_first_measurement_for_location(
     location_name: str,
@@ -285,12 +275,4 @@ def get_first_measurement_for_location(
     if first_database_row is None:
         return None
 
-    return DaylightMeasurement(
-        date=first_database_row[0],
-        location_name=first_database_row[1],
-        day_length=first_database_row[2],
-        sunrise=first_database_row[3],
-        sunset=first_database_row[4],
-        daily_increase=first_database_row[5],
-        total_increase=first_database_row[6],
-    )
+    return _measurement_from_row(first_database_row)
