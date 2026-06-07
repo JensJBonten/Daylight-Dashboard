@@ -4,6 +4,7 @@ from src.api_client import (
     create_measurement_from_sunrise_data,
     get_default_location,
     parse_sunrise_response,
+    get_api_location_by_name
 )
 
 
@@ -76,3 +77,11 @@ def test_create_measurement_from_sunrise_data_returns_daylight_measurement():
     assert measurement.day_length == "18:05:00"
     assert measurement.sunrise == "2026-05-27T03:12+01:00"
     assert measurement.sunset == "2026-05-27T21:17+01:00"
+
+
+def test_get_api_location_by_name_returns_grua():
+    location = get_api_location_by_name("Grua")
+
+    assert location.name == "Grua"
+    assert location.latitude == 60.257
+    assert location.longitude == 10.662

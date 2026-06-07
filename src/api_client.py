@@ -103,3 +103,41 @@ def create_measurement_from_sunrise_data(sunrise_response: dict, location: ApiLo
         daily_increase="00:00:00",
         total_increase="00:00:00",
     )
+    
+def get_api_locations() -> dict[str, ApiLocation]:
+    """Returnerer stedene API-et foreløpig støtter."""
+
+    return {
+        "Grua": ApiLocation(
+            name="Grua",
+            latitude=60.257,
+            longitude=10.662,
+        ),
+        "Oslo": ApiLocation(
+            name="Oslo",
+            latitude=59.9139,
+            longitude=10.7522,
+        ),
+        "Tromsø": ApiLocation(
+            name="Tromsø",
+            latitude=69.6492,
+            longitude=18.9553,
+        ),
+        "Bergen": ApiLocation(
+            name="Bergen",
+            latitude=60.39299,
+            longitude=5.32415,
+        ),
+    }
+
+
+
+def get_api_location_by_name(location_name: str) -> ApiLocation:
+    """Returnerer API-lokasjon basert på stedsnavn."""
+
+    api_locations = get_api_locations()
+
+    if location_name not in api_locations:
+        return get_default_location()
+
+    return api_locations[location_name]
