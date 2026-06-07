@@ -53,21 +53,15 @@ def initialize_database(database_file: Path = DATABASE_FILE) -> None:
                 -- Dato lagres som tekst i ISO-format, f.eks. 2026-03-10.
                 date TEXT NOT NULL,
 
-                -- Stedsnavn, f.eks. Grua, Oslo eller Tromsø.
                 location_name TEXT NOT NULL,
 
-                -- Tidsverdier lagres foreløpig som tekst i HH:MM:SS-format.
                 day_length TEXT NOT NULL,
                 sunrise TEXT NOT NULL,
                 sunset TEXT NOT NULL,
                 daily_increase TEXT NOT NULL,
                 total_increase TEXT NOT NULL,
-
-                -- Source forteller hvor målingen kommer fra.
-                -- Nå bruker vi 'excel', senere kan vi bruke 'api'.
                 source TEXT NOT NULL DEFAULT 'excel',
 
-                -- Denne hindrer at samme sted og dato lagres flere ganger.
                 -- Hvis vi prøver å lagre samme date + location_name igjen,
                 -- trigges ON CONFLICT-logikken i INSERT-spørringen under.
                 UNIQUE(date, location_name)
@@ -91,9 +85,6 @@ def save_measurement(
     initialize_database(database_file)
 
     with sqlite3.connect(database_file) as connection:
-        # INSERT INTO betyr at vi prøver å legge inn en ny rad i tabellen.
-        #
-        # Spørsmålstegnene (?) er placeholders.
         # Verdiene sendes inn separat i tuple-en under.
         # Dette er tryggere enn å bygge SQL med f-strings, fordi det beskytter mot
         # rare tegn i tekst og SQL injection.
@@ -220,3 +211,86 @@ def get_latest_measurement(
         return None
 
     return _measurement_from_row(latest_database_row)
+
+def get_previous_measurement_for_location(
+    location_name: str,
+    measurement_date: str,
+    database_file : Path = DATABASE_FILE,
+) -> DaylightMeasurement | None:
+    
+    """returnerer sist måling før valg dato for samme sted."""
+    
+    initialize_database(database_file)
+    
+    with sqlite3.connect(database_file) as connection:
+        prev_database_row = connection.execute(
+            """
+            SELECT
+                date,
+                location_name,
+                day_length,
+                sunrise,
+                sunset,
+                daily_increase,
+                total_increase
+            FROM daylight_measurements
+            WHERE location_name = ?
+              AND date < ?
+            ORDER BY date DESC
+            LIMIT 1
+            """,
+            (location_name, measurement_date),
+        ).fetchone()
+
+    if prev_database_row is None:
+        return None
+
+    return DaylightMeasurement(
+        date=prev_database_row[0],
+        location_name=prev_database_row[1],
+        day_length=prev_database_row[2],
+        sunrise=prev_database_row[3],
+        sunset=prev_database_row[4],
+        daily_increase=prev_database_row[5],
+        total_increase=prev_database_row[6],
+    )
+
+def get_first_measurement_for_location(
+    location_name: str,
+    database_file: Path = DATABASE_FILE,
+) -> DaylightMeasurement | None:
+    """Returnerer første lagrede måling for valgt sted."""
+
+    initialize_database(database_file)
+
+    with sqlite3.connect(database_file) as connection:
+        first_database_row = connection.execute(
+            """
+            SELECT
+                date,
+                location_name,
+                day_length,
+                sunrise,
+                sunset,
+                daily_increase,
+                total_increase
+            FROM daylight_measurements
+            WHERE location_name = ?
+            ORDER BY date ASC
+            LIMIT 1
+            """,
+            (location_name,),
+        ).fetchone()
+
+    if first_database_row is None:
+        return None
+
+    return DaylightMeasurement(
+        date=first_database_row[0],
+        location_name=first_database_row[1],
+        day_length=first_database_row[2],
+        sunrise=first_database_row[3],
+        sunset=first_database_row[4],
+        daily_increase=first_database_row[5],
+        total_increase=first_database_row[6],
+    )
