@@ -1,6 +1,9 @@
+# Virtual environments
 .venv/
 venv/
 __pycache__/
+
+# Python cache
 *.pyc
 .pytest_cache/
 output/
