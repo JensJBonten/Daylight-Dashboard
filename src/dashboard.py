@@ -7,28 +7,26 @@ import streamlit as st
 
 from api_client import get_api_location_by_name, get_api_locations
 from formatting import format_time_for_display
+from measurement import DaylightMeasurement
 from measurement_service import fetch_and_save_measurement
 from sqlite_storage import load_measurements
 
 
-def load_dashboard_data() -> tuple[list, pd.DataFrame]:
+def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
     """Load saved measurements and convert them to a DataFrame for dashboard use."""
 
-    # Leser alle lagrede målinger fra SQLite, som er hovedlagringen for dashboardet.
     measurements = load_measurements()
 
     if not measurements:
         return measurements, pd.DataFrame()
 
-    # Gjør DaylightMeasurement-objektene om til dictionaries,
-    # slik at pandas og Streamlit kan bruke dem.
+    # Pandas and Streamlit work with records rather than measurement objects.
     measurement_records = [measurement.to_dict() for measurement in measurements]
     measurements_dataframe = pd.DataFrame(measurement_records)
 
-    # Konverterer dato fra tekst til datetime for riktig sortering og plotting.
+    # Datetime and numeric durations give the charts correctly ordered axes.
     measurements_dataframe["date"] = pd.to_datetime(measurements_dataframe["date"])
 
-    # Konverterer HH:MM:SS-strenger til tallverdier for grafer.
     measurements_dataframe["Day length (hours)"] = (
         pd.to_timedelta(measurements_dataframe["day_length"]).dt.total_seconds() / 3600
     )
@@ -71,7 +69,7 @@ def render_fetch_daylight_button(selected_location: str) -> None:
         st.rerun()
 
 
-def render_latest_metrics(latest_measurement) -> None:
+def render_latest_metrics(latest_measurement: DaylightMeasurement) -> None:
     """Render metric cards for the latest saved daylight measurement."""
 
     st.subheader(f"Latest measurement — {latest_measurement.location_name}")
@@ -123,16 +121,14 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
     """Render the saved measurements as a table."""
 
     st.divider()
-    st.subheader("Lagrede målinger")
+    st.subheader("Saved measurements")
 
-    # Lager en egen DataFrame for visningen, slik at formatering her ikke endrer grafdataene.
+    # Keep display formatting separate so it does not alter the chart data.
     display_dataframe = measurements_dataframe.copy()
     display_dataframe = display_dataframe.sort_values("date", ascending=False)
 
-    # Viser bare datoen, uten klokkeslettet pandas legger til.
     display_dataframe["date"] = display_dataframe["date"].dt.date
 
-    # Viser klokkeslett mer lesbart i tabellen.
     display_dataframe["sunrise"] = display_dataframe["sunrise"].map(format_time_for_display)
     display_dataframe["sunset"] = display_dataframe["sunset"].map(format_time_for_display)
 

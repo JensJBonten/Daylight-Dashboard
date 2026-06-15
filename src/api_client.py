@@ -21,7 +21,7 @@ class ApiLocation:
 
 
 def get_default_location() -> ApiLocation:
-    """Returnerer default-lokasjonen som brukes i prosjektet."""
+    """Return the project's default API location."""
 
     return ApiLocation(
         name="Grua",
@@ -31,7 +31,7 @@ def get_default_location() -> ApiLocation:
 
 
 def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
-    """Henter soloppgang og solnedgang fra MET Sunrise API."""
+    """Fetch sunrise and sunset data from the MET Sunrise API."""
 
     rounded_latitude = round(location.latitude, 4)
     rounded_longitude = round(location.longitude, 4)
@@ -59,7 +59,7 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
     return response.json()
 
 def parse_sunrise_response(sunrise_response: dict) -> dict:
-    """Henter ut soloppgang og solnedgang fra MET Sunrise-responsen."""
+    """Extract sunrise and sunset times from a MET API response."""
 
     properties = sunrise_response["properties"]
     sunrise_time = properties["sunrise"]["time"]
@@ -69,7 +69,7 @@ def parse_sunrise_response(sunrise_response: dict) -> dict:
 
 
 def calculate_day_length(sunrise_time: str, sunset_time: str) -> str:
-    """Funksjonen beregner dagslengde fra soloppgang og solnedgang."""
+    """Calculate day length from ISO-formatted sunrise and sunset times."""
 
     sunrise_datetime = datetime.fromisoformat(sunrise_time)
     sunset_datetime = datetime.fromisoformat(sunset_time)
@@ -84,14 +84,14 @@ def calculate_day_length(sunrise_time: str, sunset_time: str) -> str:
 
 
 def create_measurement_from_sunrise_data(sunrise_response: dict, location: ApiLocation) -> DaylightMeasurement:
-    """Lager en DaylightMeasurement fra MET Sunrise-responsen."""
+    """Build a daylight measurement from a MET API response."""
 
     sun_times = parse_sunrise_response(sunrise_response)
     sunrise_time = sun_times["sunrise"]
     sunset_time = sun_times["sunset"]
     day_length = calculate_day_length(sunrise_time, sunset_time)
 
-    # Dato hentes fra sunrise-tiden. Vi trenger bare YYYY-MM-DD i modellen.
+    # The model stores only the date portion of the sunrise timestamp.
     measurement_date = datetime.fromisoformat(sunrise_time).date().isoformat()
 
     return DaylightMeasurement(
@@ -103,9 +103,10 @@ def create_measurement_from_sunrise_data(sunrise_response: dict, location: ApiLo
         daily_increase="00:00:00",
         total_increase="00:00:00",
     )
-    
+
+
 def get_api_locations() -> dict[str, ApiLocation]:
-    """Returnerer stedene API-et foreløpig støtter."""
+    """Return the locations currently supported by the dashboard."""
 
     return {
         "Grua": ApiLocation(
@@ -129,11 +130,8 @@ def get_api_locations() -> dict[str, ApiLocation]:
             longitude=5.32415,
         ),
     }
-
-
-
 def get_api_location_by_name(location_name: str) -> ApiLocation:
-    """Returnerer API-lokasjon basert på stedsnavn."""
+    """Return an API location by name."""
 
     api_locations = get_api_locations()
 

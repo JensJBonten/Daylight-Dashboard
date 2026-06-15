@@ -33,7 +33,8 @@ except ImportError:
 def fetch_measurement_for_location(
     location: ApiLocation, measurement_date: date
 ) -> DaylightMeasurement:
-    """Henter MET-data og gjør responsen om til en DaylightMeasurement."""
+    """Fetch MET data and convert it to a daylight measurement."""
+
     sunrise_response = fetch_sunrise_data(location, measurement_date)
     measurement = create_measurement_from_sunrise_data(sunrise_response, location)
 
@@ -44,7 +45,7 @@ def fetch_and_save_measurement(
     location: ApiLocation,
     measurement_date: date,
 ) -> DaylightMeasurement:
-    """Henter API-måling, beregner historikk og lagrer den i SQLite."""
+    """Fetch a measurement, calculate historical values, and save it."""
 
     measurement = fetch_measurement_for_location(location, measurement_date)
     measurement_with_increase = add_historical_increase_values(measurement)
@@ -56,18 +57,17 @@ def fetch_and_save_measurement(
 
 def add_historical_increase_values(
     measurement: DaylightMeasurement,
-) -> DaylightMeasurement: 
-    """Legger til dayly_increase og total_increase basert på lagret historikk."""
-    
+) -> DaylightMeasurement:
+    """Add daily and total increase values from saved history."""
+
     previous_measurement = get_previous_measurement_for_location(
         measurement.location_name,
         measurement.date,
     )
-    
-    first_measurment = get_first_measurement_for_location(
+    first_measurement = get_first_measurement_for_location(
         measurement.location_name,
     )
-    
+
     daily_increase = "00:00:00"
     total_increase = "00:00:00"
 
@@ -77,10 +77,10 @@ def add_historical_increase_values(
             previous_measurement.day_length,
         )
 
-    if first_measurment is not None:
+    if first_measurement is not None:
         total_increase = calculate_duration_difference(
             measurement.day_length,
-            first_measurment.day_length,
+            first_measurement.day_length,
         )
 
     return DaylightMeasurement(
