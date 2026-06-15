@@ -13,124 +13,170 @@ from sqlite_storage import load_measurements
 
 
 def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
-    """Load saved measurements and convert them to a DataFrame for dashboard use."""
+    """Laster lagrede målinger og gjør dem klare for dashboardet."""
 
     measurements = load_measurements()
 
     if not measurements:
         return measurements, pd.DataFrame()
 
-    # Pandas and Streamlit work with records rather than measurement objects.
-    measurement_records = [measurement.to_dict() for measurement in measurements]
+    # Pandas og Streamlit arbeider enklere med dictionaries enn modellobjekter.
+    measurement_records = [
+        measurement.to_dict()
+        for measurement in measurements
+    ]
     measurements_dataframe = pd.DataFrame(measurement_records)
 
-    # Datetime and numeric durations give the charts correctly ordered axes.
-    measurements_dataframe["date"] = pd.to_datetime(measurements_dataframe["date"])
-
-    measurements_dataframe["Day length (hours)"] = (
-        pd.to_timedelta(measurements_dataframe["day_length"]).dt.total_seconds() / 3600
+    # Konverteringene gir riktig sortering og numeriske akser i grafene.
+    measurements_dataframe["date"] = pd.to_datetime(
+        measurements_dataframe["date"]
     )
-    measurements_dataframe["Daily increase (minutes)"] = (
-        pd.to_timedelta(measurements_dataframe["daily_increase"]).dt.total_seconds() / 60
+
+    measurements_dataframe["Dagslengde (timer)"] = (
+        pd.to_timedelta(
+            measurements_dataframe["day_length"]
+        ).dt.total_seconds()
+        / 3600
+    )
+
+    measurements_dataframe["Endring siden sist (minutter)"] = (
+        pd.to_timedelta(
+            measurements_dataframe["daily_increase"]
+        ).dt.total_seconds()
+        / 60
     )
 
     return measurements, measurements_dataframe
 
 
-def render_location_filter() -> str:
-    """Render a location selector and return the selected location."""
+def render_sidebar_controls() -> str:
+    """Viser stedvalg og kontroll for å hente dagens MET-data."""
 
     available_locations = sorted(get_api_locations().keys())
 
-    selected_location = st.selectbox(
-        "Selected location",
-        options=available_locations,
-    )
+    with st.sidebar:
+        st.header("Kontroller")
+
+        selected_location = st.selectbox(
+            "Sted",
+            options=available_locations,
+        )
+
+        st.caption(
+            "Henter dagens soloppgang og solnedgang fra MET "
+            "og lagrer målingen i SQLite."
+        )
+
+        if st.button(
+            "Hent dagens data",
+            use_container_width=True,
+        ):
+            location = get_api_location_by_name(selected_location)
+
+            measurement = fetch_and_save_measurement(
+                location,
+                date.today(),
+            )
+
+            st.success(
+                f"Målingen for {measurement.location_name} "
+                f"den {measurement.date} ble lagret."
+            )
 
     return selected_location
 
 
-def render_fetch_daylight_button(selected_location: str) -> None:
-    """Render a button for fetching today's daylight data from MET Sunrise API."""
+def render_latest_metrics(
+    latest_measurement: DaylightMeasurement,
+) -> None:
+    """Viser nøkkeltall for siste lagrede måling."""
 
-    st.divider()
-    st.subheader("Update daylight data")
-    st.write("Fetch today's sunrise and sunset from MET Sunrise API and save it to SQLite.")
-
-    if st.button("Fetch today's daylight data"):
-        location = get_api_location_by_name(selected_location)
-        measurement = fetch_and_save_measurement(location, date.today())
-
-        st.success(
-            f"Saved daylight measurement for {measurement.location_name} "
-            f"on {measurement.date}."
-        )
-
-        st.rerun()
-
-
-def render_latest_metrics(latest_measurement: DaylightMeasurement) -> None:
-    """Render metric cards for the latest saved daylight measurement."""
-
-    st.subheader(f"Latest measurement — {latest_measurement.location_name}")
+    st.subheader(f"Siste måling – {latest_measurement.location_name}")
     st.caption(latest_measurement.date)
 
-    col1, col2, col3 = st.columns(3)
+    day_length_column, sunrise_column, sunset_column = st.columns(3)
 
-    with col1:
-        st.metric("Day length", latest_measurement.day_length)
+    with day_length_column:
+        st.metric(
+            "Dagslengde",
+            latest_measurement.day_length,
+        )
 
-    with col2:
-        st.metric("Sunrise", format_time_for_display(latest_measurement.sunrise))
+    with sunrise_column:
+        st.metric(
+            "Soloppgang",
+            format_time_for_display(latest_measurement.sunrise),
+        )
 
-    with col3:
-        st.metric("Sunset", format_time_for_display(latest_measurement.sunset))
+    with sunset_column:
+        st.metric(
+            "Solnedgang",
+            format_time_for_display(latest_measurement.sunset),
+        )
 
-    col4, col5 = st.columns(2)
+    daily_increase_column, total_increase_column = st.columns(2)
 
-    with col4:
-        st.metric("Daily increase", latest_measurement.daily_increase)
+    with daily_increase_column:
+        st.metric(
+            "Endring siden sist",
+            latest_measurement.daily_increase,
+        )
 
-    with col5:
-        st.metric("Total increase", latest_measurement.total_increase)
+    with total_increase_column:
+        st.metric(
+            "Total endring",
+            latest_measurement.total_increase,
+        )
 
 
-def render_charts(measurements_dataframe: pd.DataFrame) -> None:
-    """Render dashboard charts for daylight development."""
+def render_charts(
+    measurements_dataframe: pd.DataFrame,
+) -> None:
+    """Viser grafer for utviklingen i dagslys."""
 
     st.divider()
-    st.subheader("Light development per day")
-    st.write("Day length measured in hours.")
+    st.subheader("Utvikling i dagslys")
+
+    st.write("Dagslengde målt i timer.")
 
     st.line_chart(
         measurements_dataframe,
         x="date",
-        y="Day length (hours)",
+        y="Dagslengde (timer)",
     )
 
-    st.write("Daily increase measured in minutes.")
+    st.write("Endring siden sist lagrede måling, målt i minutter.")
 
     st.bar_chart(
         measurements_dataframe,
         x="date",
-        y="Daily increase (minutes)",
+        y="Endring siden sist (minutter)",
     )
 
 
-def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
-    """Render the saved measurements as a table."""
+def render_history_table(
+    measurements_dataframe: pd.DataFrame,
+) -> None:
+    """Viser lagrede målinger i en historikktabell."""
 
     st.divider()
-    st.subheader("Saved measurements")
+    st.subheader("Historikk")
 
-    # Keep display formatting separate so it does not alter the chart data.
+    # Visningsformatering holdes separat fra dataene som brukes i grafene.
     display_dataframe = measurements_dataframe.copy()
-    display_dataframe = display_dataframe.sort_values("date", ascending=False)
+    display_dataframe = display_dataframe.sort_values(
+        "date",
+        ascending=False,
+    )
 
     display_dataframe["date"] = display_dataframe["date"].dt.date
 
-    display_dataframe["sunrise"] = display_dataframe["sunrise"].map(format_time_for_display)
-    display_dataframe["sunset"] = display_dataframe["sunset"].map(format_time_for_display)
+    display_dataframe["sunrise"] = display_dataframe["sunrise"].map(
+        format_time_for_display
+    )
+    display_dataframe["sunset"] = display_dataframe["sunset"].map(
+        format_time_for_display
+    )
 
     visible_columns = [
         "date",
@@ -146,13 +192,13 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
 
     display_dataframe = display_dataframe.rename(
         columns={
-            "date": "Date",
-            "location_name": "Location",
-            "day_length": "Day length",
-            "sunrise": "Sunrise",
-            "sunset": "Sunset",
-            "daily_increase": "Daily increase",
-            "total_increase": "Total increase",
+            "date": "Dato",
+            "location_name": "Sted",
+            "day_length": "Dagslengde",
+            "sunrise": "Soloppgang",
+            "sunset": "Solnedgang",
+            "daily_increase": "Endring siden sist",
+            "total_increase": "Total endring",
         }
     )
 
@@ -165,42 +211,45 @@ def render_history_table(measurements_dataframe: pd.DataFrame) -> None:
 
 
 def main() -> None:
-    """Run the Streamlit dashboard."""
+    """Starter Streamlit-dashboardet."""
 
     st.set_page_config(
-        page_title="Daylight Dashboard",
+        page_title="Dagslysdashboard",
         page_icon="☀️",
         layout="wide",
     )
 
-    st.title("Daylight Dashboard")
-    st.write("A dashboard for daylight and seasonal development.")
+    st.title("Dagslysdashboard")
+    st.write(
+        "Følg utviklingen i dagslengde, soloppgang og solnedgang "
+        "for utvalgte steder i Norge."
+    )
+
+    # Sidepanelet må vises før data kontrolleres, slik at en tom database
+    # fortsatt kan hente og lagre sin første måling.
+    selected_location = render_sidebar_controls()
 
     measurements, measurements_dataframe = load_dashboard_data()
 
     if not measurements:
-        st.warning(
-            "No SQLite measurements found. "
-            "Run `python -m src.main --save-sqlite --location Grua` first."
+        st.info(
+            "Ingen målinger er lagret ennå. Velg et sted i sidepanelet "
+            "og hent dagens data for å opprette den første målingen."
         )
         return
 
-    st.caption(f"Loaded {len(measurements)} measurements")
-
-    selected_location = render_location_filter()
-
-    render_fetch_daylight_button(selected_location)
+    st.caption(f"{len(measurements)} lagrede målinger totalt")
 
     filtered_measurements = [
         measurement
         for measurement in measurements
         if measurement.location_name == selected_location
     ]
-    
+
     if not filtered_measurements:
         st.info(
-            f"No measurements found for {selected_location}. "
-            "Fetch today's daylight data to start tracking this location."
+            f"Det finnes ingen lagrede målinger for {selected_location}. "
+            "Bruk knappen i sidepanelet for å hente dagens data."
         )
         return
 
