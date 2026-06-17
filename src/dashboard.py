@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+import time
 
 import pandas as pd
 import streamlit as st
@@ -8,7 +9,10 @@ import streamlit as st
 from api_client import get_api_location_by_name, get_api_locations
 from formatting import format_time_for_display
 from measurement import DaylightMeasurement
-from measurement_service import fetch_and_save_measurement
+from measurement_service import (
+    fetch_and_save_measurement, 
+    DaylightServiceError,
+)
 from sqlite_storage import load_measurements
 
 
@@ -66,22 +70,50 @@ def render_sidebar_controls() -> str:
             "Henter dagens soloppgang og solnedgang fra MET "
             "og lagrer målingen i SQLite."
         )
+        
+        # Melding lagres før rerun og vises en gang etter oppdateringen. 
+        success_message = st.session_state.pop(
+            "daylight_success_message",
+             None,
+        )
+        
+        if success_message:
+            st.success(success_message)
 
         if st.button(
             "Hent dagens data",
             use_container_width=True,
         ):
             location = get_api_location_by_name(selected_location)
+            
+            try: 
+                #legger til en liten spinner som snurrer i sidepanelet mens arbeidsflyten kjører, indikasjon på at det skjer noe. 
+                with st.spinner("henter dagslysdata!"):
+                    time.sleep(2) #lagt til time 2 for å sjekke om spinner fungerer.
+                    measurement = fetch_and_save_measurement(
+                        location,
+                        date.today(),
+                    )
+            
+            except DaylightServiceError:
+                st.error(
+                    "Kunne ikke hente eller lagre dagslysdataen."
+                    "Kontroller nettforbindelsen og prøv igjen."
+                )
 
-            measurement = fetch_and_save_measurement(
-                location,
-                date.today(),
-            )
+            else:
+                # Else-blokken kjøres bare dersom try-blokken lykkes.
+                formatted_date = date.fromisoformat(
+                    measurement.date
+                ).strftime("%d.%m.%Y")
 
-            st.success(
-                f"Målingen for {measurement.location_name} "
-                f"den {measurement.date} ble lagret."
-            )
+                st.session_state["daylight_success_message"] = (
+                    f"Nice! Målingen for {measurement.location_name} "
+                    f"den {formatted_date} ble lagret."
+                )
+
+                # Dashboardet kjøres på nytt slik at nye data vises umiddelbart.
+                st.rerun()
 
     return selected_location
 
