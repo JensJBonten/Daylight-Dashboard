@@ -2,10 +2,14 @@ from src.api_client import (
     ApiLocation,
     calculate_day_length,
     create_measurement_from_sunrise_data,
+    fetch_sunrise_data,
+    get_api_location_by_name,
     get_default_location,
+    get_timezone_offset,
     parse_sunrise_response,
-    get_api_location_by_name
 )
+
+from datetime import date
 
 
 def test_get_default_location_returns_grua():
@@ -85,3 +89,52 @@ def test_get_api_location_by_name_returns_grua():
     assert location.name == "Grua"
     assert location.latitude == 60.257
     assert location.longitude == 10.662
+    
+
+def test_get_timezone_offset_returns_winter_offset():
+    offset = get_timezone_offset(date(2026, 1, 15))
+
+    assert offset == "+01:00"
+
+
+def test_get_timezone_offset_returns_summer_offset():
+    offset = get_timezone_offset(date(2026, 7, 15))
+
+    assert offset == "+02:00"
+    
+def test_fetch_sunrise_data_uses_summer_offset(monkeypatch):
+    captured_request = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"properties": {}}
+
+    def fake_get(url, params, headers, timeout):
+        captured_request["params"] = params
+        captured_request["headers"] = headers
+
+        return FakeResponse()
+
+    monkeypatch.setattr(
+        "src.api_client.requests.get",
+        fake_get,
+    )
+
+    location = ApiLocation(
+        name="Grua",
+        latitude=60.257,
+        longitude=10.662,
+    )
+
+    fetch_sunrise_data(
+        location,
+        date(2026, 7, 15),
+    )
+
+    assert captured_request["params"]["offset"] == "+02:00"
+    assert "JensJBonten/daylight_dashboard" in (
+        captured_request["headers"]["User-Agent"]
+    )

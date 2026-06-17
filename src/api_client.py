@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
 
 import requests
 
@@ -30,6 +32,33 @@ def get_default_location() -> ApiLocation:
     )
 
 
+def get_timezone_offset(measurement_date: date) -> str:
+    """Returnerer norsk UTC-forskyvning for en bestemt dato."""
+
+    oslo_datetime = datetime(
+        year=measurement_date.year,
+        month=measurement_date.month,
+        day=measurement_date.day,
+        hour=12,
+        tzinfo=ZoneInfo("Europe/Oslo"),
+    )
+
+    utc_offset = oslo_datetime.utcoffset()
+
+    if utc_offset is None:
+        raise ValueError(
+            "Could not determine the Norwegian timezone offset."
+        )
+
+    total_minutes = int(utc_offset.total_seconds() // 60)
+    sign = "+" if total_minutes >= 0 else "-"
+
+    hours, minutes = divmod(abs(total_minutes), 60)
+
+    return f"{sign}{hours:02d}:{minutes:02d}"
+    
+
+
 def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
     """Fetch sunrise and sunset data from the MET Sunrise API."""
 
@@ -37,7 +66,7 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
     rounded_longitude = round(location.longitude, 4)
 
     headers = {
-        "User-Agent": "DaylightDashboard/0.1 github.com/JensBonten/daylight-dashboard",
+        "User-Agent": ("DaylightDashboard/1.0 github.com/JensJBonten/daylight_dashboard"),
         "Accept": "application/json",
     }
 
@@ -49,7 +78,7 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
             "date": measurement_date.isoformat(),
             # Norge er UTC+01 om vinteren og UTC+02 om sommeren.
             # Dette settes hardkodet nå og forbedres senere.
-            "offset": "+01:00",
+            "offset": get_timezone_offset(measurement_date),
         },
         headers=headers,
         timeout=10,

@@ -23,3 +23,19 @@ def test_calculate_duration_difference_returns_difference():
     difference = calculate_duration_difference("18:05:00", "11:17:00")
 
     assert difference == "06:48:00"
+    
+def test_format_timedelta_handles_negative_duration():
+    formatted_duration = format_timedelta(
+        timedelta(minutes=-4)
+    )
+
+    assert formatted_duration == "-00:04:00"
+
+
+def test_calculate_duration_difference_handles_decreasing_daylight():
+    difference = calculate_duration_difference(
+        "18:01:00",
+        "18:05:00",
+    )
+
+    assert difference == "-00:04:00"
