@@ -1,0 +1,61 @@
+[theme]
+base = "light"
+
+# Gressgrønn brukes på knapper og aktive elementer.
+primaryColor = "#4F8A3C"
+
+# Lys himmel som hovedbakgrunn.
+backgroundColor = "#EAF6FF"
+
+# Myk solgul på widgeter og sekundære flater.
+secondaryBackgroundColor = "#FFF1B8"
+
+# Mørk marineblå tekst.
+textColor = "#17324D"
+
+borderColor = "#7BB6D6"
+dataframeBorderColor = "#5E9FC4"
+
+# Blå tabelloverskrift skiller tabellen fra resten.
+dataframeHeaderBackgroundColor = "#9FD3EA"
+
+showWidgetBorder = true
+showSidebarBorder = true
+
+baseRadius = "medium"
+buttonRadius = "medium"
+
+# Naturfarger for grafer og søyler.
+chartCategoricalColors = [
+    "#4F8A3C",
+    "#F2C94C",
+    "#4AA3DF",
+    "#2E6F40",
+    "#F2994A"
+]
+
+chartSequentialColors = [
+    "#EEF8E8",
+    "#DCEFD2",
+    "#C7E5B8",
+    "#ACD995",
+    "#8ECC73",
+    "#70BB56",
+    "#56A541",
+    "#428A34",
+    "#326D29",
+    "#245020"
+]
+
+[theme.sidebar]
+backgroundColor = "#8FBC72"
+
+# Dropdown og andre felt får samme blå uttrykk som historikktabellen.
+secondaryBackgroundColor = "#9FD3EA"
+
+primaryColor = "#F2C94C"
+textColor = "#17324D"
+borderColor = "#5E9FC4"
+
+showWidgetBorder = true
+
