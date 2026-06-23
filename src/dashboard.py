@@ -1,27 +1,22 @@
 from __future__ import annotations
 
 from datetime import date
-import time
 
 import pandas as pd
 import streamlit as st
 
 from api_client import get_api_location_by_name, get_api_locations
-
 from formatting import (
     format_change_for_display,
     format_date_for_display,
     format_duration_for_display,
     format_time_for_display,
 )
-
 from measurement import DaylightMeasurement
-
 from measurement_service import (
-    fetch_and_save_measurement, 
     DaylightServiceError,
+    fetch_and_save_measurement,
 )
-
 from sqlite_storage import load_measurements
 
 
@@ -79,13 +74,13 @@ def render_sidebar_controls() -> str:
             "Henter dagens soloppgang og solnedgang fra MET "
             "og lagrer målingen i SQLite."
         )
-        
-        # Melding lagres før rerun og vises en gang etter oppdateringen. 
+
+        # Melding lagres før rerun og vises en gang etter oppdateringen.
         success_message = st.session_state.pop(
             "daylight_success_message",
-             None,
+            None,
         )
-        
+
         if success_message:
             st.markdown(
                 f"""
@@ -94,31 +89,28 @@ def render_sidebar_controls() -> str:
                 </div>
                 """,
                 unsafe_allow_html=True,
-           )
+            )
 
         if st.button(
             "Hent dagens data",
             use_container_width=True,
         ):
             location = get_api_location_by_name(selected_location)
-            
-            try: 
-                #legger til en liten spinner som snurrer i sidepanelet mens arbeidsflyten kjører, indikasjon på at det skjer noe. 
+
+            try:
                 with st.spinner("henter dagslysdata!"):
-                    time.sleep(2) #lagt til time 2 for å sjekke om spinner fungerer.
                     measurement = fetch_and_save_measurement(
                         location,
                         date.today(),
                     )
-            
+
             except DaylightServiceError:
                 st.error(
-                    "Kunne ikke hente eller lagre dagslysdataen."
+                    "Kunne ikke hente eller lagre dagslysdataen. "
                     "Kontroller nettforbindelsen og prøv igjen."
                 )
 
             else:
-                # Else-blokken kjøres bare dersom try-blokken lykkes.
                 formatted_date = date.fromisoformat(
                     measurement.date
                 ).strftime("%d.%m.%Y")
@@ -416,6 +408,7 @@ def apply_custom_styles() -> None:
         unsafe_allow_html=True,
     )
 
+
 def main() -> None:
     """Starter Streamlit-dashboardet."""
 
@@ -424,17 +417,14 @@ def main() -> None:
         page_icon="☀️",
         layout="wide",
     )
-    
+
     apply_custom_styles()
-    
-    
+
     st.title("Dagslysdashboard")
     st.write(
         "Følg utviklingen i dagslengde, soloppgang og solnedgang "
         "for utvalgte steder i Norge."
     )
-    
-
 
     # Sidepanelet må vises før data kontrolleres, slik at en tom database
     # fortsatt kan hente og lagre sin første måling.

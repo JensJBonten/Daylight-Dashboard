@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-
 import requests
 
 try:
@@ -56,7 +55,6 @@ def get_timezone_offset(measurement_date: date) -> str:
     hours, minutes = divmod(abs(total_minutes), 60)
 
     return f"{sign}{hours:02d}:{minutes:02d}"
-    
 
 
 def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
@@ -66,7 +64,10 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
     rounded_longitude = round(location.longitude, 4)
 
     headers = {
-        "User-Agent": ("DaylightDashboard/1.0 github.com/JensJBonten/daylight_dashboard"),
+        "User-Agent": (
+            "DaylightDashboard/1.0 "
+            "github.com/JensJBonten/daylight_dashboard"
+        ),
         "Accept": "application/json",
     }
 
@@ -76,8 +77,6 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
             "lat": rounded_latitude,
             "lon": rounded_longitude,
             "date": measurement_date.isoformat(),
-            # Norge er UTC+01 om vinteren og UTC+02 om sommeren.
-            # Dette settes hardkodet nå og forbedres senere.
             "offset": get_timezone_offset(measurement_date),
         },
         headers=headers,
@@ -86,6 +85,7 @@ def fetch_sunrise_data(location: ApiLocation, measurement_date: date) -> dict:
     response.raise_for_status()
 
     return response.json()
+
 
 def parse_sunrise_response(sunrise_response: dict) -> dict:
     """Extract sunrise and sunset times from a MET API response."""
@@ -112,7 +112,10 @@ def calculate_day_length(sunrise_time: str, sunset_time: str) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
-def create_measurement_from_sunrise_data(sunrise_response: dict, location: ApiLocation) -> DaylightMeasurement:
+def create_measurement_from_sunrise_data(
+    sunrise_response: dict,
+    location: ApiLocation,
+) -> DaylightMeasurement:
     """Build a daylight measurement from a MET API response."""
 
     sun_times = parse_sunrise_response(sunrise_response)
@@ -159,6 +162,8 @@ def get_api_locations() -> dict[str, ApiLocation]:
             longitude=5.32415,
         ),
     }
+
+
 def get_api_location_by_name(location_name: str) -> ApiLocation:
     """Return an API location by name."""
 

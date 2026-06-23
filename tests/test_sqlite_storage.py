@@ -8,6 +8,7 @@ from src.sqlite_storage import (
     save_measurements,
 )
 
+
 def test_save_and_load_measurements_from_sqlite(tmp_path):
     """Check that measurements can be saved to and loaded from SQLite."""
 
@@ -48,9 +49,10 @@ def test_save_and_load_measurements_from_sqlite(tmp_path):
     assert latest_measurement.date == "2026-03-10"
     assert latest_measurement.location_name == "Grua"
     assert latest_measurement.total_increase == "04:08:00"
-    
-    def test_get_previous_and_first_measurement_for_location(tmp_path):
-        """Check that SQLite can find previous and first measurements for a location."""
+
+
+def test_get_previous_and_first_measurement_for_location(tmp_path):
+    """Check that SQLite can find previous and first measurements for a location."""
 
     database_file = tmp_path / "daylight.db"
 

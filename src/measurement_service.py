@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import date
+
+import requests
 
 try:
     from .api_client import (
@@ -30,6 +33,19 @@ except ImportError:
     from time_utils import calculate_duration_difference
 
 
+class DaylightServiceError(Exception):
+    """Raised when daylight data cannot be fetched, processed, or saved."""
+
+
+EXPECTED_SERVICE_ERRORS = (
+    requests.RequestException,
+    sqlite3.Error,
+    KeyError,
+    TypeError,
+    ValueError,
+)
+
+
 def fetch_measurement_for_location(
     location: ApiLocation, measurement_date: date
 ) -> DaylightMeasurement:
@@ -45,14 +61,28 @@ def fetch_and_save_measurement(
     location: ApiLocation,
     measurement_date: date,
 ) -> DaylightMeasurement:
-    """Fetch a measurement, calculate historical values, and save it."""
+    """Fetch, process, and save one daylight measurement."""
 
-    measurement = fetch_measurement_for_location(location, measurement_date)
-    measurement_with_increase = add_historical_increase_values(measurement)
+    try:
+        measurement = fetch_measurement_for_location(
+            location,
+            measurement_date,
+        )
 
-    save_measurement(measurement_with_increase, source="api")
+        measurement_with_increase = add_historical_increase_values(measurement)
 
-    return measurement_with_increase
+        save_measurement(
+            measurement_with_increase,
+            source="api",
+        )
+
+        # Dashboardet trenger målingen for å vise dato og sted.
+        return measurement_with_increase
+
+    except EXPECTED_SERVICE_ERRORS as error:
+        raise DaylightServiceError(
+            "Could not fetch or save daylight data."
+        ) from error
 
 
 def add_historical_increase_values(

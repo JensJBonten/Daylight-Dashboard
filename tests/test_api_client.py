@@ -1,3 +1,7 @@
+from datetime import date
+
+import pytest
+
 from src.api_client import (
     ApiLocation,
     calculate_day_length,
@@ -8,8 +12,6 @@ from src.api_client import (
     get_timezone_offset,
     parse_sunrise_response,
 )
-
-from datetime import date
 
 
 def test_get_default_location_returns_grua():
@@ -41,10 +43,11 @@ def test_parse_sunrise_response_extracts_sunrise_and_sunset():
     parsed_data = parse_sunrise_response(sunrise_response)
     assert parsed_data["sunrise"] == "2026-05-27T03:12+01:00"
     assert parsed_data["sunset"] == "2026-05-27T21:17+01:00"
-    
-    
+
+
 def test_calculate_day_length_returns_duration_between_sunrise_and_sunset():
     """Tester at dagslengde beregnes fra soloppgang og solnedgang."""
+
     day_length = calculate_day_length(
         "2026-05-27T03:12+01:00",
         "2026-05-27T21:17+01:00",
@@ -89,7 +92,7 @@ def test_get_api_location_by_name_returns_grua():
     assert location.name == "Grua"
     assert location.latitude == 60.257
     assert location.longitude == 10.662
-    
+
 
 def test_get_timezone_offset_returns_winter_offset():
     offset = get_timezone_offset(date(2026, 1, 15))
@@ -101,8 +104,20 @@ def test_get_timezone_offset_returns_summer_offset():
     offset = get_timezone_offset(date(2026, 7, 15))
 
     assert offset == "+02:00"
-    
-def test_fetch_sunrise_data_uses_summer_offset(monkeypatch):
+
+
+@pytest.mark.parametrize(
+    ("measurement_date", "expected_offset"),
+    [
+        (date(2026, 1, 15), "+01:00"),
+        (date(2026, 7, 15), "+02:00"),
+    ],
+)
+def test_fetch_sunrise_data_uses_oslo_timezone_offset(
+    monkeypatch,
+    measurement_date,
+    expected_offset,
+):
     captured_request = {}
 
     class FakeResponse:
@@ -131,10 +146,11 @@ def test_fetch_sunrise_data_uses_summer_offset(monkeypatch):
 
     fetch_sunrise_data(
         location,
-        date(2026, 7, 15),
+        measurement_date,
     )
 
-    assert captured_request["params"]["offset"] == "+02:00"
-    assert "JensJBonten/daylight_dashboard" in (
+    assert captured_request["params"]["offset"] == expected_offset
+    assert (
         captured_request["headers"]["User-Agent"]
+        == "DaylightDashboard/1.0 github.com/JensJBonten/daylight_dashboard"
     )

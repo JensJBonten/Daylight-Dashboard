@@ -4,3 +4,4 @@ pandas==3.0.1
 pytest==9.0.3
 requests==2.34.2
 streamlit==1.57.0
+tzdata==2025.3

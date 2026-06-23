@@ -23,7 +23,8 @@ def test_calculate_duration_difference_returns_difference():
     difference = calculate_duration_difference("18:05:00", "11:17:00")
 
     assert difference == "06:48:00"
-    
+
+
 def test_format_timedelta_handles_negative_duration():
     formatted_duration = format_timedelta(
         timedelta(minutes=-4)

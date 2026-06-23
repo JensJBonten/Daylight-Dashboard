@@ -29,6 +29,7 @@ def format_time_for_display(time_value: str) -> str:
 
     return time_value[:5]
 
+
 def format_date_for_display(date_value: str) -> str:
     """Formaterer en ISO-dato som DD.MM.YYYY."""
 
@@ -52,6 +53,7 @@ def _duration_to_seconds(duration_value: str) -> int:
         + seconds
     )
 
+
 def format_duration_for_display(duration_value: str) -> str:
     """Formaterer dagslengde som timer og minutter."""
 
@@ -62,7 +64,8 @@ def format_duration_for_display(duration_value: str) -> str:
     sign = "-" if total_seconds < 0 else ""
 
     return f"{sign}{hours} t {minutes} min"
-    
+
+
 def format_change_for_display(duration_value: str) -> str:
     """Formaterer en endring med tydelig fortegn."""
 

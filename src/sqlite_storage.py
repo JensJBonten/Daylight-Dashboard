@@ -210,16 +210,16 @@ def get_latest_measurement(
 
     return _measurement_from_row(latest_database_row)
 
+
 def get_previous_measurement_for_location(
     location_name: str,
     measurement_date: str,
-    database_file : Path = DATABASE_FILE,
+    database_file: Path = DATABASE_FILE,
 ) -> DaylightMeasurement | None:
-    
     """returnerer sist måling før valg dato for samme sted."""
-    
+
     initialize_database(database_file)
-    
+
     with sqlite3.connect(database_file) as connection:
         prev_database_row = connection.execute(
             """
@@ -244,6 +244,7 @@ def get_previous_measurement_for_location(
         return None
 
     return _measurement_from_row(prev_database_row)
+
 
 def get_first_measurement_for_location(
     location_name: str,

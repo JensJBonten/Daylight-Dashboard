@@ -1,14 +1,22 @@
 from datetime import date
+import sqlite3
+
+import pytest
+import requests
 
 from src.api_client import ApiLocation
-from src.measurement_service import fetch_measurement_for_location
 from src.measurement import DaylightMeasurement
-from src.measurement_service import add_historical_increase_values
+from src.measurement_service import (
+    DaylightServiceError,
+    add_historical_increase_values,
+    fetch_and_save_measurement,
+    fetch_measurement_for_location,
+)
 
 
 def test_fetch_measurement_for_location_uses_api_response(monkeypatch):
     """Tester service-laget uten å kalle ekte MET API."""
-    
+
     fake_response = {
         "properties": {
             "sunrise": {
@@ -88,3 +96,156 @@ def test_add_historical_increase_values_uses_saved_history(monkeypatch):
 
     assert measurement.daily_increase == "07:12:00"
     assert measurement.total_increase == "11:20:00"
+
+
+def test_fetch_and_save_measurement_wraps_api_timeout(monkeypatch):
+    """Network errors should become DaylightServiceError."""
+
+    def raise_timeout(location, measurement_date):
+        raise requests.Timeout("MET did not respond")
+
+    monkeypatch.setattr(
+        "src.measurement_service.fetch_measurement_for_location",
+        raise_timeout,
+    )
+
+    location = ApiLocation(
+        name="Grua",
+        latitude=60.257,
+        longitude=10.662,
+    )
+
+    with pytest.raises(DaylightServiceError) as error:
+        fetch_and_save_measurement(
+            location,
+            date(2026, 6, 16),
+        )
+
+    assert isinstance(error.value.__cause__, requests.Timeout)
+
+
+def test_fetch_and_save_measurement_wraps_invalid_api_data(monkeypatch):
+    """Invalid API data should become DaylightServiceError."""
+
+    invalid_response = {"properties": {"sunrise": {}}}
+
+    monkeypatch.setattr(
+        "src.measurement_service.fetch_sunrise_data",
+        lambda location, measurement_date: invalid_response,
+    )
+
+    location = ApiLocation(
+        name="Grua",
+        latitude=60.257,
+        longitude=10.662,
+    )
+
+    with pytest.raises(DaylightServiceError) as error:
+        fetch_and_save_measurement(
+            location,
+            date(2026, 6, 16),
+        )
+
+    assert isinstance(error.value.__cause__, KeyError)
+
+
+def test_fetch_and_save_measurement_wraps_storage_error(monkeypatch):
+    """SQLite errors should become DaylightServiceError."""
+
+    measurement = DaylightMeasurement(
+        date="2026-06-16",
+        location_name="Grua",
+        day_length="18:45:00",
+        sunrise="2026-06-16T03:00+02:00",
+        sunset="2026-06-16T21:45+02:00",
+        daily_increase="00:00:00",
+        total_increase="00:00:00",
+    )
+
+    monkeypatch.setattr(
+        "src.measurement_service.fetch_measurement_for_location",
+        lambda location, measurement_date: measurement,
+    )
+
+    monkeypatch.setattr(
+        "src.measurement_service.add_historical_increase_values",
+        lambda saved_measurement: saved_measurement,
+    )
+
+    def raise_storage_error(measurement_to_save, source):
+        raise sqlite3.OperationalError("Database unavailable")
+
+    monkeypatch.setattr(
+        "src.measurement_service.save_measurement",
+        raise_storage_error,
+    )
+
+    location = ApiLocation(
+        name="Grua",
+        latitude=60.257,
+        longitude=10.662,
+    )
+
+    with pytest.raises(DaylightServiceError) as error:
+        fetch_and_save_measurement(
+            location,
+            date(2026, 6, 16),
+        )
+
+    assert isinstance(
+        error.value.__cause__,
+        sqlite3.OperationalError,
+    )
+
+
+def test_fetch_and_save_measurement_returns_saved_measurement(monkeypatch):
+    measurement = DaylightMeasurement(
+        date="2026-06-16",
+        location_name="Grua",
+        day_length="18:45:00",
+        sunrise="2026-06-16T03:00+02:00",
+        sunset="2026-06-16T21:45+02:00",
+        daily_increase="00:00:00",
+        total_increase="00:00:00",
+    )
+
+    saved_measurement = DaylightMeasurement(
+        date="2026-06-16",
+        location_name="Grua",
+        day_length="18:45:00",
+        sunrise="2026-06-16T03:00+02:00",
+        sunset="2026-06-16T21:45+02:00",
+        daily_increase="00:03:00",
+        total_increase="11:20:00",
+    )
+
+    saved_calls = []
+
+    monkeypatch.setattr(
+        "src.measurement_service.fetch_measurement_for_location",
+        lambda location, measurement_date: measurement,
+    )
+    monkeypatch.setattr(
+        "src.measurement_service.add_historical_increase_values",
+        lambda api_measurement: saved_measurement,
+    )
+    monkeypatch.setattr(
+        "src.measurement_service.save_measurement",
+        lambda measurement_to_save, source: saved_calls.append(
+            (measurement_to_save, source)
+        ),
+    )
+
+    location = ApiLocation(
+        name="Grua",
+        latitude=60.257,
+        longitude=10.662,
+    )
+
+    returned_measurement = fetch_and_save_measurement(
+        location,
+        date(2026, 6, 16),
+    )
+
+    assert returned_measurement == saved_measurement
+    assert saved_calls == [(saved_measurement, "api")]
