@@ -58,9 +58,10 @@ def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
 
 
 def render_sidebar_controls() -> str:
-    """Viser stedvalg og kontroll for å hente dagens MET-data."""
+    """Viser stedvalg og kontroll for å hente dagens MET-data"""
 
     available_locations = sorted(get_api_locations().keys())
+    default_location_index = available_locations.index("Oslo")
 
     with st.sidebar:
         st.header("Kontroller")
@@ -68,11 +69,12 @@ def render_sidebar_controls() -> str:
         selected_location = st.selectbox(
             "Sted",
             options=available_locations,
+            index=default_location_index,
         )
 
         st.caption(
-            "Henter dagens soloppgang og solnedgang fra MET "
-            "og lagrer målingen i SQLite."
+            "Registrerer dagens registrering og henter soloppgang og "
+            "og solnedgang fra MET"
         )
 
         # Melding lagres før rerun og vises en gang etter oppdateringen.
@@ -92,7 +94,7 @@ def render_sidebar_controls() -> str:
             )
 
         if st.button(
-            "Hent dagens data",
+            "Registrer data i dag.",
             use_container_width=True,
         ):
             location = get_api_location_by_name(selected_location)

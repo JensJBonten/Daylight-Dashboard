@@ -4,7 +4,9 @@ from src.sqlite_storage import (
     get_latest_measurement,
     get_previous_measurement_for_location,
     initialize_database,
+    load_check_in_dates,
     load_measurements,
+    save_check_in,
     save_measurements,
 )
 
@@ -98,6 +100,8 @@ def test_get_previous_and_first_measurement_for_location(tmp_path):
         location_name="Grua",
         database_file=database_file,
     )
+    
+    
 
     assert previous_measurement is not None
     assert previous_measurement.date == "2026-03-10"
@@ -108,3 +112,35 @@ def test_get_previous_and_first_measurement_for_location(tmp_path):
     assert first_measurement.date == "2026-01-22"
     assert first_measurement.location_name == "Grua"
     assert first_measurement.day_length == "07:09:00"
+    
+    
+def test_check_in_is_unique_per_location_and_date(
+    tmp_path,
+):
+    database_file = tmp_path / "daylight.db"
+
+    save_check_in(
+        "Oslo",
+        "2026-08-21",
+        database_file,
+    )
+    save_check_in(
+        "Oslo",
+        "2026-08-21",
+        database_file,
+    )
+    save_check_in(
+        "Bergen",
+        "2026-08-21",
+        database_file,
+    )
+
+    assert load_check_in_dates(
+        "Oslo",
+        database_file,
+    ) == ["2026-08-21"]
+
+    assert load_check_in_dates(
+        "Bergen",
+        database_file,
+    ) == ["2026-08-21"]

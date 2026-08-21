@@ -15,9 +15,12 @@ try:
     from .sqlite_storage import (
         get_first_measurement_for_location,
         get_previous_measurement_for_location,
+        save_check_in,
         save_measurement,
     )
     from .time_utils import calculate_duration_difference
+    
+    
 except ImportError:
     from api_client import (
         ApiLocation,
@@ -28,6 +31,7 @@ except ImportError:
     from sqlite_storage import (
         get_first_measurement_for_location,
         get_previous_measurement_for_location,
+        save_check_in,
         save_measurement,
     )
     from time_utils import calculate_duration_difference
@@ -75,8 +79,11 @@ def fetch_and_save_measurement(
             measurement_with_increase,
             source="api",
         )
-
-        # Dashboardet trenger målingen for å vise dato og sted.
+        save_check_in(
+            location_name=measurement_with_increase.location_name,
+            check_in_date=measurement_with_increase.date
+        )
+        
         return measurement_with_increase
 
     except EXPECTED_SERVICE_ERRORS as error:
