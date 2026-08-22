@@ -16,7 +16,7 @@ def save_plot(
     daylight_dataframe: pd.DataFrame,
     output_path: Path,
 ) -> None:
-    """Lagrer en enkel graf som viser dagslengde og daglig økning."""
+    """Save a chart showing day length and daily increase."""
 
     output_path.parent.mkdir(
         parents=True,
@@ -70,12 +70,13 @@ def save_plot(
 
     plt.close(fig)
 
+
 def build_reference_daylight_chart(
     reference_data: pd.DataFrame,
     measurement_data: pd.DataFrame,
     accent_color: str,
 ) -> alt.LayerChart:
-    """Bygg graf med MET-referanse, egne målinger og årets solverv."""
+    """Build a chart with MET data, measurements, and solstices."""
 
     selected_year = int(
         reference_data["date"].dt.year.iloc[0]

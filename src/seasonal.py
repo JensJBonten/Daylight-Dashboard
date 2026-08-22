@@ -8,38 +8,37 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class Solstice:
-    
-    """represent one solstice referance date"""
-    
+    """Represent one solstice reference date."""
+
     name: str
     date: date
     icon: str
-    
+
 
 @dataclass(frozen=True)
-class SeasonTheme: 
-    """represents the visual theme for one season"""
-    
+class SeasonTheme:
+    """Represent the visual theme for one season."""
+
     name: str
     icon: str
     accent: str
     background: str
-    
+
 
 def get_solstices(
-    year: int, 
-) -> tuple[Solstice, Solstice]: 
-    """Return summer and winter Solstice reference dates"""
-    
+    year: int,
+) -> tuple[Solstice, Solstice]:
+    """Return summer and winter solstice reference dates."""
+
     return (
         Solstice(
             name="Sommersolverv",
-            date=date(year, 6,21),
+            date=date(year, 6, 21),
             icon="☀️",
         ),
         Solstice(
             name="Vintersolverv",
-            date=date(year, 12,21),
+            date=date(year, 12, 21),
             icon="❄️",
         ),
     )
@@ -47,23 +46,23 @@ def get_solstices(
 
 def get_next_solstice(
     today: date,
-) -> Solstice: 
-    """Return the next Solstace, including today"""
-    
+) -> Solstice:
+    """Return the next solstice, including today."""
+
     summer, winter = get_solstices(
         today.year
     )
-    
+
     if today <= summer.date:
         return summer
-    
+
     if today <= winter.date:
         return winter
-    
+
     next_summer, _ = get_solstices(
-        today.year +1
+        today.year + 1
     )
-    
+
     return next_summer
 
 
@@ -88,10 +87,11 @@ def get_previous_solstice(
 
     return previous_winter
 
+
 def get_season_theme(
     target_date: date,
 ) -> SeasonTheme:
-    """Returnerer sesongtema basert på dato."""
+    """Return the seasonal theme for a date."""
 
     month = target_date.month
 
@@ -111,7 +111,7 @@ def get_season_theme(
             accent="#B84A3A",
         )
 
-    if month in (12, 1, 2):
+    if month in (1, 2):
         return SeasonTheme(
             name="Vinter",
             icon="❄️",
@@ -141,7 +141,8 @@ def get_season_theme(
         background="#FFF0E0",
         accent="#C97A2B",
     )
-    
+
+
 def find_nearest_reference_row(
     reference_data: pd.DataFrame,
     target_date: date,
@@ -202,9 +203,7 @@ def calculate_change_since_solstice(
         ).days
     )
 
-    # Referansedataene inneholder ett punkt per uke.
-    # Nærmeste punkt kan derfor ligge noen dager
-    # før eller etter den faktiske solvervdatoen.
+    # Weekly reference points may fall before or after the exact solstice date.
     if distance_from_solstice > 7:
         return None
 
@@ -224,6 +223,7 @@ def calculate_change_since_solstice(
         latest_row["daylight_hours"]
         - solstice_row["daylight_hours"]
     )
+
 
 def format_hours_change(
     change_in_hours: float,

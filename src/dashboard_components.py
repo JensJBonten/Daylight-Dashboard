@@ -35,7 +35,7 @@ from sqlite_storage import load_check_in_dates
 
 
 def render_sidebar_controls() -> str:
-    """Viser stedvalg og kontroll for dagens innsjekking."""
+    """Render location selection and today's check-in control."""
 
     available_locations = sorted(get_api_locations().keys())
     default_location_index = available_locations.index("Oslo")
@@ -136,12 +136,11 @@ def render_sidebar_controls() -> str:
 def render_season_overview(
     selected_location: str,
 ) -> SeasonTheme:
-    """Vis sesong, solverv og dagslysendring for valgt sted."""
+    """Render season, solstices, and daylight change for a location."""
 
     today = date.today()
 
-    # Midlertidig kontroll for testing av sesongtemaene.
-    # Denne påvirker bare det visuelle temaet.
+    # Previewing a season changes only the visual theme.
     season_preview_dates = {
         "Automatisk – dagens dato": today,
         "❄️ Vinter": date(today.year, 1, 15),
@@ -152,15 +151,14 @@ def render_season_overview(
         "🎅 Jul": date(today.year, 12, 15),
     }
 
-    with st.sidebar.expander("Test sesongtema"):
+    with st.sidebar.expander("Forhåndsvis sesongtema"):
         selected_preview = st.selectbox(
             "Forhåndsvis tema",
             options=list(season_preview_dates.keys()),
         )
 
         st.caption(
-            "Midlertidig testkontroll. "
-            "Endrer kun sesongtemaet."
+            "Forhåndsvisningen endrer kun sesongtemaet."
         )
 
     theme_date = season_preview_dates[selected_preview]
@@ -193,7 +191,7 @@ def render_season_overview(
         accent_color=season.accent,
     )
 
-    # Solverv og beregninger bruker fortsatt ekte dato.
+    # Solstice and daylight calculations always use the actual date.
     previous_solstice = get_previous_solstice(today)
     next_solstice = get_next_solstice(today)
 
@@ -277,7 +275,7 @@ font-size: 0.95rem;
 def render_latest_metrics(
     latest_measurement: DaylightMeasurement,
 ) -> None:
-    """Viser siste måling som fem tydelige nøkkeltall."""
+    """Render the latest measurement as five key metrics."""
 
     st.subheader(
         f"Siste måling – {latest_measurement.location_name}"
@@ -341,7 +339,7 @@ def render_reference_chart(
     measurements_dataframe: pd.DataFrame,
     accent_color: str,
 ) -> None:
-    """Vis MET-referanse og egne lagrede målinger i samme graf."""
+    """Render MET reference data and saved measurements in one chart."""
 
     current_year = date.today().year
 
@@ -403,7 +401,7 @@ def render_charts(
     measurements_dataframe: pd.DataFrame,
     accent_color: str,
 ) -> None:
-    """Viser dagslengde og daglig endring som separate grafkort."""
+    """Render day length and daily change as separate chart cards."""
 
     st.divider()
     st.subheader("Utvikling i dagslys")
@@ -446,7 +444,7 @@ def render_history_table(
     background_color: str,
     accent_color: str,
 ) -> None:
-    """Viser lagrede målinger med lesbare norske verdier."""
+    """Render saved measurements with readable Norwegian values."""
 
     st.divider()
     st.subheader("Historikk")
@@ -518,8 +516,7 @@ def render_history_table(
         }
     )
 
-    # Bare tabellheaderen får en svak sesongfarge.
-    # Selve datatabellen beholdes nøytral.
+    # Apply seasonal color only to the header so the data remains neutral.
     styled_dataframe = display_dataframe.style.set_table_styles(
         [
             {

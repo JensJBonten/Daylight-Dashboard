@@ -6,7 +6,7 @@ from .formatting import format_duration
 
 
 def build_summary(daylight_dataframe: pd.DataFrame) -> list[str]:
-    """Bygger en kort oppsummering av det innlastede datasettet."""
+    """Build a short summary of the loaded dataset."""
 
     first_measurement_row = daylight_dataframe.iloc[0]
     last_measurement_row = daylight_dataframe.iloc[-1]
@@ -23,7 +23,7 @@ def build_summary(daylight_dataframe: pd.DataFrame) -> list[str]:
 
 
 def print_preview(daylight_dataframe: pd.DataFrame, row_count: int) -> None:
-    """Skriver ut de første radene som en lesbar og formatert tabell."""
+    """Print the first rows as a readable formatted table."""
 
     if row_count <= 0:
         return

@@ -54,12 +54,16 @@ EXPECTED_SERVICE_ERRORS = (
 
 
 def fetch_measurement_for_location(
-    location: ApiLocation, measurement_date: date
+    location: ApiLocation,
+    measurement_date: date,
 ) -> DaylightMeasurement:
     """Fetch MET data and convert it to a daylight measurement."""
 
     sunrise_response = fetch_sunrise_data(location, measurement_date)
-    measurement = create_measurement_from_sunrise_data(sunrise_response, location)
+    measurement = create_measurement_from_sunrise_data(
+        sunrise_response,
+        location,
+    )
 
     return measurement
 
@@ -76,7 +80,9 @@ def fetch_and_save_measurement(
             measurement_date,
         )
 
-        measurement_with_increase = add_historical_increase_values(measurement)
+        measurement_with_increase = add_historical_increase_values(
+            measurement
+        )
 
         save_measurement(
             measurement_with_increase,
@@ -84,9 +90,9 @@ def fetch_and_save_measurement(
         )
         save_check_in(
             location_name=measurement_with_increase.location_name,
-            check_in_date=measurement_with_increase.date
+            check_in_date=measurement_with_increase.date,
         )
-        
+
         return measurement_with_increase
 
     except EXPECTED_SERVICE_ERRORS as error:

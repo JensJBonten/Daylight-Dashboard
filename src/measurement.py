@@ -3,9 +3,9 @@ from dataclasses import dataclass
 
 @dataclass
 class DaylightMeasurement:
-    """Datamodell for en dagslysmåling på ett sted og én dato."""
+    """Represent a daylight measurement for one location and date."""
 
-    # Alle feltene lagres som strenger for at objektet enkelt skal kunne skrives til JSON.
+    # String fields keep JSON and SQLite serialization straightforward.
     date: str
     location_name: str
     day_length: str

@@ -32,7 +32,7 @@ def get_default_location() -> ApiLocation:
 
 
 def get_timezone_offset(measurement_date: date) -> str:
-    """Returnerer norsk UTC-forskyvning for en bestemt dato."""
+    """Return the Norwegian UTC offset for a date."""
 
     oslo_datetime = datetime(
         year=measurement_date.year,

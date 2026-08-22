@@ -6,7 +6,7 @@ import pandas as pd
 
 
 def format_duration(value: pd.Timedelta) -> str:
-    """Formaterer en Timedelta som HH:MM:SS."""
+    """Format a Timedelta as HH:MM:SS."""
 
     if pd.isna(value):
         return "N/A"
@@ -22,7 +22,7 @@ def format_duration(value: pd.Timedelta) -> str:
 
 
 def format_time_for_display(time_value: str) -> str:
-    """Formaterer MET ISO-tid eller HH:MM:SS til HH:MM."""
+    """Format a MET ISO time or HH:MM:SS value as HH:MM."""
 
     if "T" in time_value:
         return datetime.fromisoformat(time_value).strftime("%H:%M")
@@ -31,13 +31,13 @@ def format_time_for_display(time_value: str) -> str:
 
 
 def format_date_for_display(date_value: str) -> str:
-    """Formaterer en ISO-dato som DD.MM.YYYY."""
+    """Format an ISO date as DD.MM.YYYY."""
 
     return datetime.fromisoformat(date_value).strftime("%d.%m.%Y")
 
 
 def _duration_to_seconds(duration_value: str) -> int:
-    """Gjør en signert HH:MM:SS-verdi om til sekunder."""
+    """Convert a signed HH:MM:SS value to seconds."""
 
     sign = -1 if duration_value.startswith("-") else 1
     normalized_duration = duration_value.lstrip("+-")
@@ -55,7 +55,7 @@ def _duration_to_seconds(duration_value: str) -> int:
 
 
 def format_duration_for_display(duration_value: str) -> str:
-    """Formaterer dagslengde som timer og minutter."""
+    """Format day length as hours and minutes."""
 
     total_seconds = _duration_to_seconds(duration_value)
     total_minutes = abs(total_seconds) // 60
@@ -67,7 +67,7 @@ def format_duration_for_display(duration_value: str) -> str:
 
 
 def format_change_for_display(duration_value: str) -> str:
-    """Formaterer en endring med tydelig fortegn."""
+    """Format a duration change with an explicit sign."""
 
     total_seconds = _duration_to_seconds(duration_value)
 

@@ -4,7 +4,7 @@ from datetime import timedelta
 
 
 def parse_duration(duration: str) -> timedelta:
-    """Gjør en positiv eller negativ HH:MM:SS-verdi om til timedelta."""
+    """Convert a positive or negative HH:MM:SS value to timedelta."""
 
     sign = -1 if duration.startswith("-") else 1
     normalized_duration = duration.lstrip("+-")
@@ -21,7 +21,7 @@ def parse_duration(duration: str) -> timedelta:
 
 
 def format_timedelta(duration: timedelta) -> str:
-    """Formaterer timedelta som en signert HH:MM:SS-verdi."""
+    """Format a timedelta as a signed HH:MM:SS value."""
 
     total_seconds = int(duration.total_seconds())
     sign = "-" if total_seconds < 0 else ""
@@ -37,7 +37,7 @@ def calculate_duration_difference(
     new_duration: str,
     old_duration: str,
 ) -> str:
-    """Beregner forskjellen mellom to HH:MM:SS-verdier."""
+    """Calculate the difference between two HH:MM:SS values."""
 
     difference = (
         parse_duration(new_duration)

@@ -4,7 +4,7 @@ import streamlit as st
 
 
 def apply_custom_styles() -> None:
-    """Tilpasser sidepanelet og bekreftelsesmeldingen."""
+    """Apply custom styles to the sidebar and confirmation message."""
 
     st.markdown(
         """
@@ -96,11 +96,12 @@ def apply_custom_styles() -> None:
         unsafe_allow_html=True,
     )
 
+
 def apply_season_sidebar_style(
     background_color: str,
     accent_color: str,
 ) -> None:
-    """Tilpass sidepanelet til det aktive sesongtemaet."""
+    """Apply the active seasonal theme to the sidebar."""
 
     st.markdown(
         f"""

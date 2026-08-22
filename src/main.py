@@ -32,7 +32,7 @@ else:
 
 
 def parse_args() -> argparse.Namespace:
-    """Leser inn valg som brukeren kan sende inn fra kommandolinjen."""
+    """Parse command-line options."""
 
     parser = argparse.ArgumentParser(
         description=(
@@ -87,7 +87,7 @@ def print_measurement(
     title: str,
     measurement,
 ) -> None:
-    """Skriver ut en DaylightMeasurement på en ryddig måte i terminalen."""
+    """Print a DaylightMeasurement in a readable terminal format."""
 
     print(f"\n{title}:")
     print(f"- Date: {measurement.date}")
@@ -100,7 +100,7 @@ def print_measurement(
 
 
 def main() -> None:
-    """Kjører hele arbeidsflyten fra Excel-fil til utskrift, lagring og valgfri graf."""
+    """Run the Excel import, reporting, storage, and chart workflow."""
 
     args = parse_args()
 
@@ -121,21 +121,16 @@ def main() -> None:
         args.preview,
     )
 
-    # Konverterer DataFrame-radene til DaylightMeasurement-objekter.
-    # Denne listen kan brukes av både JSON-lagring og SQLite-lagring.
     measurements = measurements_from_dataframe(
         daylight_dataframe,
         location_name=args.location,
     )
 
     if args.save:
-        # Lagrer målingene til data/saved_measurements.json.
-        # Dette er den opprinnelige JSON-lagringen.
         save_measurements(
             measurements
         )
 
-        # Leser tilbake siste måling for å bekrefte at lagringen fungerer.
         latest_measurement = (
             get_latest_measurement()
         )
@@ -147,13 +142,10 @@ def main() -> None:
             )
 
     if args.save_sqlite:
-        # Lagrer målingene i SQLite-databasen.
-        # UNIQUE(date, location_name) i databasen hindrer duplikater.
         save_sqlite_measurements(
             measurements
         )
 
-        # Leser tilbake siste måling for å bekrefte at lagringen fungerer.
         latest_sqlite_measurement = (
             get_latest_sqlite_measurement()
         )

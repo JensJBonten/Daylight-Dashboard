@@ -17,21 +17,19 @@ from sqlite_storage import load_measurements
 
 
 def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
-    """Laster lagrede målinger og gjør dem klare for dashboardet."""
+    """Load saved measurements and prepare them for the dashboard."""
 
     measurements = load_measurements()
 
     if not measurements:
         return measurements, pd.DataFrame()
 
-    # Pandas og Streamlit arbeider enklere med dictionaries enn modellobjekter.
     measurement_records = [
         measurement.to_dict()
         for measurement in measurements
     ]
     measurements_dataframe = pd.DataFrame(measurement_records)
 
-    # Konverteringene gir riktig sortering og numeriske akser i grafene.
     measurements_dataframe["date"] = pd.to_datetime(
         measurements_dataframe["date"]
     )
@@ -54,7 +52,7 @@ def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
 
 
 def main() -> None:
-    """Starter Streamlit-dashboardet."""
+    """Start the Streamlit dashboard."""
 
     st.set_page_config(
         page_title="Dagslysdashboard",
@@ -79,8 +77,8 @@ def main() -> None:
 
     measurements, measurements_dataframe = load_dashboard_data()
 
-    # Referansekurven er uavhengig av SQLite og skal derfor
-    # vises selv om brukeren ikke har registrert noen målinger ennå.
+    # Reference data is independent of SQLite and remains available without
+    # personal measurements.
     if measurements_dataframe.empty:
         selected_measurements_dataframe = pd.DataFrame()
     else:
