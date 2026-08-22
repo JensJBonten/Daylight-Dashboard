@@ -83,8 +83,8 @@ def test_add_historical_increase_values_uses_saved_history(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "src.measurement_service.get_previous_measurement_for_location",
-        lambda location_name, measurement_date: previous_measurement,
+        "src.measurement_service.get_latest_check_in_measurement",
+        lambda location_name, before_date: previous_measurement,
     )
 
     monkeypatch.setattr(

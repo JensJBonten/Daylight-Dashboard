@@ -14,13 +14,14 @@ try:
     from .measurement import DaylightMeasurement
     from .sqlite_storage import (
         get_first_measurement_for_location,
-        get_previous_measurement_for_location,
+        get_latest_check_in_measurement,
         save_check_in,
         save_measurement,
     )
-    from .time_utils import calculate_duration_difference
-    
-    
+    from .time_utils import (
+        calculate_duration_difference,
+    )
+
 except ImportError:
     from api_client import (
         ApiLocation,
@@ -30,11 +31,13 @@ except ImportError:
     from measurement import DaylightMeasurement
     from sqlite_storage import (
         get_first_measurement_for_location,
-        get_previous_measurement_for_location,
+        get_latest_check_in_measurement,
         save_check_in,
         save_measurement,
     )
-    from time_utils import calculate_duration_difference
+    from time_utils import (
+        calculate_duration_difference,
+    )
 
 
 class DaylightServiceError(Exception):
@@ -97,9 +100,9 @@ def add_historical_increase_values(
 ) -> DaylightMeasurement:
     """Add daily and total increase values from saved history."""
 
-    previous_measurement = get_previous_measurement_for_location(
-        measurement.location_name,
-        measurement.date,
+    previous_measurement = get_latest_check_in_measurement(
+        location_name=measurement.location_name,
+        before_date=measurement.date,
     )
     first_measurement = get_first_measurement_for_location(
         measurement.location_name,
