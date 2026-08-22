@@ -1,0 +1,257 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+
+import pandas as pd
+
+
+@dataclass(frozen=True)
+class Solstice:
+    
+    """represent one solstice referance date"""
+    
+    name: str
+    date: date
+    icon: str
+    
+
+@dataclass(frozen=True)
+class SeasonTheme: 
+    """represents the visual theme for one season"""
+    
+    name: str
+    icon: str
+    accent: str
+    background: str
+    
+
+def get_solstices(
+    year: int, 
+) -> tuple[Solstice, Solstice]: 
+    """Return summer and winter Solstice reference dates"""
+    
+    return (
+        Solstice(
+            name="Sommersolverv",
+            date=date(year, 6,21),
+            icon="☀️",
+        ),
+        Solstice(
+            name="Vintersolverv",
+            date=date(year, 12,21),
+            icon="❄️",
+        ),
+    )
+
+
+def get_next_solstice(
+    today: date,
+) -> Solstice: 
+    """Return the next Solstace, including today"""
+    
+    summer, winter = get_solstices(
+        today.year
+    )
+    
+    if today <= summer.date:
+        return summer
+    
+    if today <= winter.date:
+        return winter
+    
+    next_summer, _ = get_solstices(
+        today.year +1
+    )
+    
+    return next_summer
+
+
+def get_previous_solstice(
+    today: date,
+) -> Solstice:
+    """Return the latest solstice on or before today."""
+
+    summer, winter = get_solstices(
+        today.year
+    )
+
+    if today >= winter.date:
+        return winter
+
+    if today >= summer.date:
+        return summer
+
+    _, previous_winter = get_solstices(
+        today.year - 1
+    )
+
+    return previous_winter
+
+def get_season_theme(
+    selected_date: date, 
+) -> SeasonTheme: 
+    """Return the visual theme for a date."""
+    
+    month = selected_date.month
+    
+    if month in (1,2):
+        return SeasonTheme(
+            name="Vinter",
+            icon="❄️",
+            accent="#6E9FBD",
+            background="#EDF6FC",
+        )
+        
+    if month in (3,4,5): 
+        return SeasonTheme(
+            name="Vår",
+            icon="🌱",
+            accent="#67A85B",
+            background="#EEF8E8",
+        )
+        
+    if month in (6,7,8): 
+        return SeasonTheme(
+            name="Sommer",
+            icon="☀️",
+            accent="#D7A21B",
+            background="#FFF7D6",
+        )
+
+    if month == 9:
+        return SeasonTheme(
+            name="Høst",
+            icon="🍂",
+            accent="#C87932",
+            background="#FFF1E3",
+        )
+
+    if month == 10:
+        return SeasonTheme(
+            name="Halloween",
+            icon="🎃",
+            accent="#D36B1F",
+            background="#FFF0E6",
+        )
+
+    return SeasonTheme(
+        name="Jul",
+        icon="🎅",
+        accent="#A63D40",
+        background="#FBEDEE",
+    )
+    
+def find_nearest_reference_row(
+    reference_data: pd.DataFrame,
+    target_date: date,
+) -> pd.Series:
+    """Return the weekly reference row nearest a date."""
+
+    if reference_data.empty:
+        raise ValueError(
+            "Reference data cannot be empty."
+        )
+
+    target_timestamp = pd.Timestamp(
+        target_date
+    )
+
+    distances = (
+        reference_data["date"]
+        - target_timestamp
+    ).abs()
+
+    return reference_data.loc[
+        distances.idxmin()
+    ]
+
+
+def calculate_change_since_solstice(
+    reference_data: pd.DataFrame,
+    today: date,
+) -> float | None:
+    """Calculate daylight change since the previous solstice."""
+
+    if reference_data.empty:
+        return None
+
+    previous_solstice = get_previous_solstice(
+        today
+    )
+
+    reference_years = set(
+        reference_data["date"].dt.year
+    )
+
+    if (
+        previous_solstice.date.year
+        not in reference_years
+    ):
+        return None
+
+    solstice_row = find_nearest_reference_row(
+        reference_data,
+        previous_solstice.date,
+    )
+
+    distance_from_solstice = abs(
+        (
+            solstice_row["date"].date()
+            - previous_solstice.date
+        ).days
+    )
+
+    # Referansedataene inneholder ett punkt per uke.
+    # Nærmeste punkt kan derfor ligge noen dager
+    # før eller etter den faktiske solvervdatoen.
+    if distance_from_solstice > 7:
+        return None
+
+    available_data = reference_data[
+        reference_data["date"]
+        <= pd.Timestamp(today)
+    ]
+
+    if available_data.empty:
+        return None
+
+    latest_row = available_data.loc[
+        available_data["date"].idxmax()
+    ]
+
+    return float(
+        latest_row["daylight_hours"]
+        - solstice_row["daylight_hours"]
+    )
+
+def format_hours_change(
+    change_in_hours: float,
+) -> str:
+    """Format decimal hours as signed hours and minutes."""
+
+    total_minutes = round(
+        abs(change_in_hours) * 60
+    )
+
+    hours, minutes = divmod(
+        total_minutes,
+        60,
+    )
+
+    if change_in_hours > 0:
+        sign = "+"
+    elif change_in_hours < 0:
+        sign = "−"
+    else:
+        sign = ""
+
+    parts: list[str] = []
+
+    if hours:
+        parts.append(f"{hours} t")
+
+    if minutes or not parts:
+        parts.append(f"{minutes} min")
+
+    return sign + " ".join(parts)
