@@ -126,6 +126,53 @@ def load_check_in_dates(
 
     return [row[0] for row in rows]
 
+def get_latest_check_in_measurement(
+    location_name: str,
+    before_date: str,
+    database_file: Path = DATABASE_FILE,
+) -> DaylightMeasurement | None:
+    """Return the latest checked-in measurement before a date."""
+
+    initialize_database(
+        database_file
+    )
+
+    with sqlite3.connect(
+        database_file
+    ) as connection:
+        row = connection.execute(
+            """
+            SELECT
+                measurement.date,
+                measurement.location_name,
+                measurement.day_length,
+                measurement.sunrise,
+                measurement.sunset,
+                measurement.daily_increase,
+                measurement.total_increase
+            FROM daylight_measurements AS measurement
+            INNER JOIN daylight_check_ins AS check_in
+                ON check_in.date = measurement.date
+                AND check_in.location_name =
+                    measurement.location_name
+            WHERE check_in.location_name = ?
+              AND check_in.date < ?
+            ORDER BY check_in.date DESC
+            LIMIT 1
+            """,
+            (
+                location_name,
+                before_date,
+            ),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    return _measurement_from_row(
+        row
+    )
+
 
 def save_measurement(
     measurement: DaylightMeasurement,
