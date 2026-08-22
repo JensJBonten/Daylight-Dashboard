@@ -65,6 +65,7 @@ def main() -> None:
     apply_custom_styles()
 
     st.title("Dagslysdashboard")
+
     st.write(
         "Følg utviklingen i dagslengde, soloppgang og solnedgang "
         "for utvalgte steder i Norge."
@@ -72,18 +73,39 @@ def main() -> None:
 
     selected_location = render_sidebar_controls()
 
-    render_season_overview(selected_location)
+    season_theme = render_season_overview(
+        selected_location
+    )
 
     measurements, measurements_dataframe = load_dashboard_data()
 
+    # Referansekurven er uavhengig av SQLite og skal derfor
+    # vises selv om brukeren ikke har registrert noen målinger ennå.
+    if measurements_dataframe.empty:
+        selected_measurements_dataframe = pd.DataFrame()
+    else:
+        selected_measurements_dataframe = measurements_dataframe[
+            measurements_dataframe["location_name"]
+            == selected_location
+        ].copy()
+
+    render_reference_chart(
+        selected_location,
+        selected_measurements_dataframe,
+        season_theme.accent,
+    )
+
     if not measurements:
         st.info(
-            "Ingen målinger er lagret ennå. Velg et sted i sidepanelet "
-            "og sjekk inn for å opprette den første målingen."
+            "Ingen egne målinger er lagret ennå. "
+            "Bruk «Sjekk inn i dag» i sidepanelet "
+            "for å registrere den første målingen."
         )
         return
 
-    st.caption(f"{len(measurements)} lagrede målinger totalt")
+    st.caption(
+        f"{len(measurements)} lagrede målinger totalt"
+    )
 
     filtered_measurements = [
         measurement
@@ -93,26 +115,27 @@ def main() -> None:
 
     if not filtered_measurements:
         st.info(
-            f"Det finnes ingen lagrede målinger for {selected_location}. "
-            "Bruk knappen i sidepanelet for å sjekke inn."
+            f"Det finnes ingen egne målinger for {selected_location} ennå. "
+            "MET-referansekurven over kan fortsatt brukes som sammenligning."
         )
         return
 
-    filtered_measurements_dataframe = measurements_dataframe[
-        measurements_dataframe["location_name"] == selected_location
-    ].copy()
-
     latest_measurement = filtered_measurements[-1]
 
-    render_latest_metrics(latest_measurement)
-
-    render_reference_chart(
-        selected_location,
-        filtered_measurements_dataframe,
+    render_latest_metrics(
+        latest_measurement
     )
 
-    render_charts(filtered_measurements_dataframe)
-    render_history_table(filtered_measurements_dataframe)
+    render_charts(
+        selected_measurements_dataframe,
+        season_theme.accent,
+    )
+
+    render_history_table(
+        selected_measurements_dataframe,
+        season_theme.background,
+        season_theme.accent,
+    )
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from api_client import get_api_location_by_name, get_api_locations
+from dashboard_styles import apply_season_sidebar_style
 from formatting import (
     format_change_for_display,
     format_date_for_display,
@@ -23,15 +24,14 @@ from reference_data import (
     load_reference_data,
 )
 from seasonal import (
+    SeasonTheme,
     calculate_change_since_solstice,
     format_hours_change,
     get_next_solstice,
     get_previous_solstice,
     get_season_theme,
 )
-from sqlite_storage import (
-    load_check_in_dates,
-)
+from sqlite_storage import load_check_in_dates
 
 
 def render_sidebar_controls() -> str:
@@ -53,7 +53,6 @@ def render_sidebar_controls() -> str:
         )
 
         check_in_dates = load_check_in_dates(selected_location)
-
         already_checked_in_today = today_iso in check_in_dates
 
         st.caption(
@@ -77,7 +76,6 @@ def render_sidebar_controls() -> str:
         else:
             st.caption("Ingen innsjekkinger ennå.")
 
-        # Melding lagres før rerun og vises en gang etter oppdateringen.
         success_message = st.session_state.pop(
             "daylight_success_message",
             None,
@@ -137,12 +135,65 @@ def render_sidebar_controls() -> str:
 
 def render_season_overview(
     selected_location: str,
-) -> None:
+) -> SeasonTheme:
     """Vis sesong, solverv og dagslysendring for valgt sted."""
 
     today = date.today()
 
-    season = get_season_theme(today)
+    # Midlertidig kontroll for testing av sesongtemaene.
+    # Denne påvirker bare det visuelle temaet.
+    season_preview_dates = {
+        "Automatisk – dagens dato": today,
+        "❄️ Vinter": date(today.year, 1, 15),
+        "🌱 Vår": date(today.year, 4, 15),
+        "☀️ Sommer": date(today.year, 7, 15),
+        "🍂 Høst": date(today.year, 9, 15),
+        "🎃 Halloween": date(today.year, 10, 15),
+        "🎅 Jul": date(today.year, 12, 15),
+    }
+
+    with st.sidebar.expander("Test sesongtema"):
+        selected_preview = st.selectbox(
+            "Forhåndsvis tema",
+            options=list(season_preview_dates.keys()),
+        )
+
+        st.caption(
+            "Midlertidig testkontroll. "
+            "Endrer kun sesongtemaet."
+        )
+
+    theme_date = season_preview_dates[selected_preview]
+    season = get_season_theme(theme_date)
+
+    month_names = {
+        1: "Januar",
+        2: "Februar",
+        3: "Mars",
+        4: "April",
+        5: "Mai",
+        6: "Juni",
+        7: "Juli",
+        8: "August",
+        9: "September",
+        10: "Oktober",
+        11: "November",
+        12: "Desember",
+    }
+
+    month_name = month_names[theme_date.month]
+
+    if season.name in ("Halloween", "Jul"):
+        season_heading = f"{month_name} ({season.name})"
+    else:
+        season_heading = month_name
+
+    apply_season_sidebar_style(
+        background_color=season.background,
+        accent_color=season.accent,
+    )
+
+    # Solverv og beregninger bruker fortsatt ekte dato.
     previous_solstice = get_previous_solstice(today)
     next_solstice = get_next_solstice(today)
 
@@ -172,9 +223,7 @@ def render_season_overview(
         daylight_change = None
 
     if daylight_change is not None:
-        formatted_change = format_hours_change(
-            daylight_change
-        )
+        formatted_change = format_hours_change(daylight_change)
 
         daylight_change_text = (
             f"{formatted_change} dagslys siden "
@@ -186,8 +235,6 @@ def render_season_overview(
             "for solvervsammenligning."
         )
 
-    # HTML uten innrykk hindrer Streamlit i å tolke
-    # de indre div-elementene som kodeblokker.
     season_card = f"""
 <div style="
 background-color: {season.background};
@@ -202,7 +249,7 @@ font-size: 1.25rem;
 font-weight: 800;
 margin-bottom: 8px;
 ">
-{season.icon} {season.name}
+{season.icon} {season_heading}
 </div>
 <div style="
 font-size: 1rem;
@@ -224,6 +271,8 @@ font-size: 0.95rem;
         unsafe_allow_html=True,
     )
 
+    return season
+
 
 def render_latest_metrics(
     latest_measurement: DaylightMeasurement,
@@ -241,7 +290,6 @@ def render_latest_metrics(
 
     metric_columns = st.columns(5, gap="small")
 
-    # En felles liste holder kortenes struktur konsistent.
     metrics = [
         (
             "Dagslengde",
@@ -281,7 +329,6 @@ def render_latest_metrics(
         strict=True,
     ):
         with column:
-            # Containeren gir hvert nøkkeltall et eget visuelt kort.
             with st.container(border=True):
                 st.metric(
                     label=label,
@@ -292,6 +339,7 @@ def render_latest_metrics(
 def render_reference_chart(
     selected_location: str,
     measurements_dataframe: pd.DataFrame,
+    accent_color: str,
 ) -> None:
     """Vis MET-referanse og egne lagrede målinger i samme graf."""
 
@@ -316,14 +364,24 @@ def render_reference_chart(
         )
         return
 
-    personal_measurements = measurements_dataframe[
-        measurements_dataframe["date"].dt.year
-        == current_year
-    ].copy()
+    if measurements_dataframe.empty:
+        personal_measurements = pd.DataFrame(
+            columns=[
+                "date",
+                "Dagslengde (timer)",
+            ]
+        )
+
+    else:
+        personal_measurements = measurements_dataframe[
+            measurements_dataframe["date"].dt.year
+            == current_year
+        ].copy()
 
     reference_chart = build_reference_daylight_chart(
         reference_data,
         personal_measurements,
+        accent_color,
     )
 
     st.divider()
@@ -331,7 +389,7 @@ def render_reference_chart(
 
     st.caption(
         "Den svake linjen viser ukentlige MET-referanseverdier. "
-        "De grønne punktene viser dine egne lagrede målinger."
+        "De tydelige punktene viser dine egne lagrede målinger."
     )
 
     with st.container(border=True):
@@ -339,10 +397,11 @@ def render_reference_chart(
             reference_chart,
             use_container_width=True,
         )
-        
-        
+
+
 def render_charts(
     measurements_dataframe: pd.DataFrame,
+    accent_color: str,
 ) -> None:
     """Viser dagslengde og daglig endring som separate grafkort."""
 
@@ -351,6 +410,7 @@ def render_charts(
 
     with st.container(border=True):
         st.markdown("#### Dagslengde")
+
         st.caption(
             "Utviklingen i antall timer dagslys gjennom perioden."
         )
@@ -359,12 +419,14 @@ def render_charts(
             measurements_dataframe,
             x="date",
             y="Dagslengde (timer)",
+            color=accent_color,
             height=340,
             use_container_width=True,
         )
 
     with st.container(border=True):
         st.markdown("#### Endring siden sist")
+
         st.caption(
             "Forskjellen fra den forrige lagrede målingen."
         )
@@ -373,6 +435,7 @@ def render_charts(
             measurements_dataframe,
             x="date",
             y="Endring siden sist (minutter)",
+            color=accent_color,
             height=320,
             use_container_width=True,
         )
@@ -380,13 +443,14 @@ def render_charts(
 
 def render_history_table(
     measurements_dataframe: pd.DataFrame,
+    background_color: str,
+    accent_color: str,
 ) -> None:
     """Viser lagrede målinger med lesbare norske verdier."""
 
     st.divider()
     st.subheader("Historikk")
 
-    # Vi formaterer en kopi slik at grafdataene forblir numeriske.
     display_dataframe = measurements_dataframe.copy()
 
     display_dataframe = display_dataframe.sort_values(
@@ -394,7 +458,6 @@ def render_history_table(
         ascending=False,
     )
 
-    # Datoen i DataFrame-en er en pandas Timestamp.
     display_dataframe["date"] = display_dataframe["date"].map(
         lambda value: format_date_for_display(
             value.date().isoformat()
@@ -431,7 +494,6 @@ def render_history_table(
         )
     )
 
-    # Bare kolonnene som er relevante for brukeren vises.
     visible_columns = [
         "date",
         "location_name",
@@ -456,10 +518,33 @@ def render_history_table(
         }
     )
 
-    # Rammen skiller historikken visuelt fra resten av dashboardet.
+    # Bare tabellheaderen får en svak sesongfarge.
+    # Selve datatabellen beholdes nøytral.
+    styled_dataframe = display_dataframe.style.set_table_styles(
+        [
+            {
+                "selector": "th",
+                "props": [
+                    (
+                        "background-color",
+                        background_color,
+                    ),
+                    (
+                        "color",
+                        "#17324D",
+                    ),
+                    (
+                        "border-bottom",
+                        f"2px solid {accent_color}",
+                    ),
+                ],
+            }
+        ]
+    )
+
     with st.container(border=True):
         st.dataframe(
-            display_dataframe,
+            styled_dataframe,
             width="stretch",
             hide_index=True,
             height=420,

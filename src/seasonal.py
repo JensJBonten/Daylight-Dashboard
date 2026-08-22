@@ -89,57 +89,57 @@ def get_previous_solstice(
     return previous_winter
 
 def get_season_theme(
-    selected_date: date, 
-) -> SeasonTheme: 
-    """Return the visual theme for a date."""
-    
-    month = selected_date.month
-    
-    if month in (1,2):
-        return SeasonTheme(
-            name="Vinter",
-            icon="❄️",
-            accent="#6E9FBD",
-            background="#EDF6FC",
-        )
-        
-    if month in (3,4,5): 
-        return SeasonTheme(
-            name="Vår",
-            icon="🌱",
-            accent="#67A85B",
-            background="#EEF8E8",
-        )
-        
-    if month in (6,7,8): 
-        return SeasonTheme(
-            name="Sommer",
-            icon="☀️",
-            accent="#D7A21B",
-            background="#FFF7D6",
-        )
+    target_date: date,
+) -> SeasonTheme:
+    """Returnerer sesongtema basert på dato."""
 
-    if month == 9:
-        return SeasonTheme(
-            name="Høst",
-            icon="🍂",
-            accent="#C87932",
-            background="#FFF1E3",
-        )
+    month = target_date.month
 
     if month == 10:
         return SeasonTheme(
             name="Halloween",
             icon="🎃",
-            accent="#D36B1F",
-            background="#FFF0E6",
+            background="#FFF1E3",
+            accent="#C86A1E",
+        )
+
+    if month in (11, 12):
+        return SeasonTheme(
+            name="Jul",
+            icon="🎅",
+            background="#F4F8F0",
+            accent="#B84A3A",
+        )
+
+    if month in (12, 1, 2):
+        return SeasonTheme(
+            name="Vinter",
+            icon="❄️",
+            background="#EAF4FF",
+            accent="#7DA6D9",
+        )
+
+    if month in (3, 4, 5):
+        return SeasonTheme(
+            name="Vår",
+            icon="🌱",
+            background="#EEF7E8",
+            accent="#6FAE57",
+        )
+
+    if month in (6, 7, 8):
+        return SeasonTheme(
+            name="Sommer",
+            icon="☀️",
+            background="#FFF8D9",
+            accent="#D9B338",
         )
 
     return SeasonTheme(
-        name="Jul",
-        icon="🎅",
-        accent="#A63D40",
-        background="#FBEDEE",
+        name="Høst",
+        icon="🍂",
+        background="#FFF0E0",
+        accent="#C97A2B",
     )
     
 def find_nearest_reference_row(

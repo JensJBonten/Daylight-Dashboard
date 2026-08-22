@@ -95,3 +95,21 @@ def apply_custom_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+def apply_season_sidebar_style(
+    background_color: str,
+    accent_color: str,
+) -> None:
+    """Tilpass sidepanelet til det aktive sesongtemaet."""
+
+    st.markdown(
+        f"""
+<style>
+[data-testid="stSidebar"] {{
+    background-color: {background_color} !important;
+    border-right-color: {accent_color} !important;
+}}
+</style>
+""",
+        unsafe_allow_html=True,
+    )

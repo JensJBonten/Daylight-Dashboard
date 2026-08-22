@@ -6,6 +6,11 @@ import altair as alt
 import matplotlib.pyplot as plt
 import pandas as pd
 
+try:
+    from .seasonal import get_solstices
+except ImportError:
+    from seasonal import get_solstices
+
 
 def save_plot(
     daylight_dataframe: pd.DataFrame,
@@ -68,8 +73,43 @@ def save_plot(
 def build_reference_daylight_chart(
     reference_data: pd.DataFrame,
     measurement_data: pd.DataFrame,
+    accent_color: str,
 ) -> alt.LayerChart:
-    """Bygg graf med MET-referanse og egne lagrede målinger."""
+    """Bygg graf med MET-referanse, egne målinger og årets solverv."""
+
+    selected_year = int(
+        reference_data["date"].dt.year.iloc[0]
+    )
+
+    summer_solstice, winter_solstice = get_solstices(
+        selected_year
+    )
+
+    summer_timestamp = pd.Timestamp(
+        summer_solstice.date
+    )
+
+    winter_timestamp = pd.Timestamp(
+        winter_solstice.date
+    )
+
+    chart_start = reference_data["date"].min()
+    chart_end = winter_timestamp
+
+    if not measurement_data.empty:
+        measurement_start = measurement_data["date"].min()
+
+        chart_start = min(
+            chart_start,
+            measurement_start,
+        )
+
+    x_scale = alt.Scale(
+        domain=[
+            chart_start,
+            chart_end,
+        ]
+    )
 
     reference_chart = (
         alt.Chart(reference_data)
@@ -82,6 +122,7 @@ def build_reference_daylight_chart(
             x=alt.X(
                 "date:T",
                 title="Dato",
+                scale=x_scale,
             ),
             y=alt.Y(
                 "daylight_hours:Q",
@@ -114,14 +155,17 @@ def build_reference_daylight_chart(
             point=alt.OverlayMarkDef(
                 filled=True,
                 size=110,
+                fill=accent_color,
+                stroke=accent_color,
             ),
             strokeWidth=3,
-            color="#2E7D32",
+            color=accent_color,
         )
         .encode(
             x=alt.X(
                 "date:T",
                 title="Dato",
+                scale=x_scale,
             ),
             y=alt.Y(
                 "Dagslengde (timer):Q",
@@ -149,10 +193,78 @@ def build_reference_daylight_chart(
         )
     )
 
+    solstice_data = pd.DataFrame(
+        [
+            {
+                "date": summer_timestamp,
+                "label": (
+                    f"{summer_solstice.icon} "
+                    f"{summer_solstice.name}"
+                ),
+            },
+            {
+                "date": winter_timestamp,
+                "label": (
+                    f"{winter_solstice.icon} "
+                    f"{winter_solstice.name}"
+                ),
+            },
+        ]
+    )
+
+    solstice_rules = (
+        alt.Chart(solstice_data)
+        .mark_rule(
+            strokeDash=[6, 4],
+            strokeWidth=2,
+            opacity=0.65,
+            color="#6B7280",
+        )
+        .encode(
+            x=alt.X(
+                "date:T",
+                scale=x_scale,
+            ),
+            tooltip=[
+                alt.Tooltip(
+                    "label:N",
+                    title="Solverv",
+                ),
+                alt.Tooltip(
+                    "date:T",
+                    title="Dato",
+                    format="%d.%m.%Y",
+                ),
+            ],
+        )
+    )
+
+    solstice_labels = (
+        alt.Chart(solstice_data)
+        .mark_text(
+            angle=270,
+            align="left",
+            baseline="middle",
+            color="#4B5563",
+        )
+        .encode(
+            x=alt.X(
+                "date:T",
+                scale=x_scale,
+            ),
+            y=alt.value(12),
+            text=alt.Text(
+                "label:N",
+            ),
+        )
+    )
+
     chart = (
         alt.layer(
             reference_chart,
             measurement_chart,
+            solstice_rules,
+            solstice_labels,
         )
         .properties(
             height=360,
