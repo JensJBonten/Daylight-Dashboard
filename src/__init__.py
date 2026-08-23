@@ -1,1 +1,1 @@
-"""Pakke for analyse av dagslysdata."""
+"""Tools for analyzing daylight data."""

@@ -14,10 +14,14 @@ try:
     from .measurement import DaylightMeasurement
     from .sqlite_storage import (
         get_first_measurement_for_location,
-        get_previous_measurement_for_location,
+        get_latest_check_in_measurement,
+        save_check_in,
         save_measurement,
     )
-    from .time_utils import calculate_duration_difference
+    from .time_utils import (
+        calculate_duration_difference,
+    )
+
 except ImportError:
     from api_client import (
         ApiLocation,
@@ -27,10 +31,13 @@ except ImportError:
     from measurement import DaylightMeasurement
     from sqlite_storage import (
         get_first_measurement_for_location,
-        get_previous_measurement_for_location,
+        get_latest_check_in_measurement,
+        save_check_in,
         save_measurement,
     )
-    from time_utils import calculate_duration_difference
+    from time_utils import (
+        calculate_duration_difference,
+    )
 
 
 class DaylightServiceError(Exception):
@@ -47,12 +54,16 @@ EXPECTED_SERVICE_ERRORS = (
 
 
 def fetch_measurement_for_location(
-    location: ApiLocation, measurement_date: date
+    location: ApiLocation,
+    measurement_date: date,
 ) -> DaylightMeasurement:
     """Fetch MET data and convert it to a daylight measurement."""
 
     sunrise_response = fetch_sunrise_data(location, measurement_date)
-    measurement = create_measurement_from_sunrise_data(sunrise_response, location)
+    measurement = create_measurement_from_sunrise_data(
+        sunrise_response,
+        location,
+    )
 
     return measurement
 
@@ -69,14 +80,19 @@ def fetch_and_save_measurement(
             measurement_date,
         )
 
-        measurement_with_increase = add_historical_increase_values(measurement)
+        measurement_with_increase = add_historical_increase_values(
+            measurement
+        )
 
         save_measurement(
             measurement_with_increase,
             source="api",
         )
+        save_check_in(
+            location_name=measurement_with_increase.location_name,
+            check_in_date=measurement_with_increase.date,
+        )
 
-        # Dashboardet trenger målingen for å vise dato og sted.
         return measurement_with_increase
 
     except EXPECTED_SERVICE_ERRORS as error:
@@ -90,9 +106,9 @@ def add_historical_increase_values(
 ) -> DaylightMeasurement:
     """Add daily and total increase values from saved history."""
 
-    previous_measurement = get_previous_measurement_for_location(
-        measurement.location_name,
-        measurement.date,
+    previous_measurement = get_latest_check_in_measurement(
+        location_name=measurement.location_name,
+        before_date=measurement.date,
     )
     first_measurement = get_first_measurement_for_location(
         measurement.location_name,

@@ -83,8 +83,8 @@ def test_add_historical_increase_values_uses_saved_history(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "src.measurement_service.get_previous_measurement_for_location",
-        lambda location_name, measurement_date: previous_measurement,
+        "src.measurement_service.get_latest_check_in_measurement",
+        lambda location_name, before_date: previous_measurement,
     )
 
     monkeypatch.setattr(
@@ -198,7 +198,9 @@ def test_fetch_and_save_measurement_wraps_storage_error(monkeypatch):
     )
 
 
-def test_fetch_and_save_measurement_returns_saved_measurement(monkeypatch):
+def test_fetch_and_save_measurement_returns_saved_measurement(
+    monkeypatch,
+):
     measurement = DaylightMeasurement(
         date="2026-06-16",
         location_name="Grua",
@@ -220,19 +222,29 @@ def test_fetch_and_save_measurement_returns_saved_measurement(monkeypatch):
     )
 
     saved_calls = []
+    check_in_calls = []
 
     monkeypatch.setattr(
         "src.measurement_service.fetch_measurement_for_location",
         lambda location, measurement_date: measurement,
     )
+
     monkeypatch.setattr(
         "src.measurement_service.add_historical_increase_values",
         lambda api_measurement: saved_measurement,
     )
+
     monkeypatch.setattr(
         "src.measurement_service.save_measurement",
         lambda measurement_to_save, source: saved_calls.append(
             (measurement_to_save, source)
+        ),
+    )
+
+    monkeypatch.setattr(
+        "src.measurement_service.save_check_in",
+        lambda location_name, check_in_date: check_in_calls.append(
+            (location_name, check_in_date)
         ),
     )
 
@@ -248,4 +260,9 @@ def test_fetch_and_save_measurement_returns_saved_measurement(monkeypatch):
     )
 
     assert returned_measurement == saved_measurement
-    assert saved_calls == [(saved_measurement, "api")]
+    assert saved_calls == [
+        (saved_measurement, "api")
+    ]
+    assert check_in_calls == [
+        ("Grua", "2026-06-16")
+    ]
