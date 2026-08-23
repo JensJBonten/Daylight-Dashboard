@@ -171,17 +171,31 @@ def save_measurement(
     measurement: DaylightMeasurement,
     database_file: Path = DATABASE_FILE,
     source: str = "excel",
+    overwrite_existing: bool = True,
 ) -> None:
     """Save one daylight measurement to SQLite.
 
-    If the same date/location already exists, the row is updated instead of duplicated.
+    Existing date/location rows are updated by default. Set
+    ``overwrite_existing`` to false to preserve them.
     """
 
     initialize_database(database_file)
 
+    conflict_action = (
+        """DO UPDATE SET
+                day_length = excluded.day_length,
+                sunrise = excluded.sunrise,
+                sunset = excluded.sunset,
+                daily_increase = excluded.daily_increase,
+                total_increase = excluded.total_increase,
+                source = excluded.source"""
+        if overwrite_existing
+        else "DO NOTHING"
+    )
+
     with sqlite3.connect(database_file) as connection:
         connection.execute(
-            """
+            f"""
             INSERT INTO daylight_measurements (
                 date,
                 location_name,
@@ -193,13 +207,7 @@ def save_measurement(
                 source
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(date, location_name) DO UPDATE SET
-                day_length = excluded.day_length,
-                sunrise = excluded.sunrise,
-                sunset = excluded.sunset,
-                daily_increase = excluded.daily_increase,
-                total_increase = excluded.total_increase,
-                source = excluded.source
+            ON CONFLICT(date, location_name) {conflict_action}
             """,
             (
                 measurement.date,
@@ -218,6 +226,7 @@ def save_measurements(
     measurements: list[DaylightMeasurement],
     database_file: Path = DATABASE_FILE,
     source: str = "excel",
+    overwrite_existing: bool = True,
 ) -> None:
     """Save several daylight measurements to SQLite."""
 
@@ -226,7 +235,30 @@ def save_measurements(
             measurement,
             database_file=database_file,
             source=source,
+            overwrite_existing=overwrite_existing,
         )
+
+
+def has_measurements_from_source(
+    source: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Return whether at least one measurement from a source is saved."""
+
+    initialize_database(database_file)
+
+    with sqlite3.connect(database_file) as connection:
+        row = connection.execute(
+            """
+            SELECT 1
+            FROM daylight_measurements
+            WHERE source = ?
+            LIMIT 1
+            """,
+            (source,),
+        ).fetchone()
+
+    return row is not None
 
 
 def load_measurements(
