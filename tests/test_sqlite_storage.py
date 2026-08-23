@@ -1,3 +1,5 @@
+import sqlite3
+
 from src.measurement import DaylightMeasurement
 from src.sqlite_storage import (
     get_first_measurement_for_location,
@@ -7,7 +9,9 @@ from src.sqlite_storage import (
     initialize_database,
     load_check_in_dates,
     load_measurements,
+    reconcile_check_in_measurements,
     save_check_in,
+    save_measurement,
     save_measurements,
 )
 
@@ -214,3 +218,82 @@ def test_get_latest_check_in_measurement(
     assert result is not None
     assert result.date == "2026-08-01"
     assert result.day_length == "16:10:00"
+
+
+def test_reconcile_updates_only_check_ins_and_preserves_sources(tmp_path):
+    database_file = tmp_path / "daylight.db"
+    measurements = [
+        DaylightMeasurement(
+            date="2026-01-01",
+            location_name="Oslo",
+            day_length="10:00:00",
+            sunrise="08:00:00",
+            sunset="18:00:00",
+            daily_increase="00:00:00",
+            total_increase="00:00:00",
+        ),
+        DaylightMeasurement(
+            date="2026-06-17",
+            location_name="Oslo",
+            day_length="12:00:00",
+            sunrise="06:00:00",
+            sunset="18:00:00",
+            daily_increase="00:00:00",
+            total_increase="00:00:00",
+        ),
+        DaylightMeasurement(
+            date="2026-06-18",
+            location_name="Oslo",
+            day_length="12:30:00",
+            sunrise="05:45:00",
+            sunset="18:15:00",
+            daily_increase="00:30:00",
+            total_increase="02:30:00",
+        ),
+        DaylightMeasurement(
+            date="2026-08-22",
+            location_name="Oslo",
+            day_length="13:00:00",
+            sunrise="05:30:00",
+            sunset="18:30:00",
+            daily_increase="00:00:00",
+            total_increase="00:00:00",
+        ),
+    ]
+    sources = (
+        "historical_grua_excel",
+        "api",
+        "api",
+        "api",
+    )
+    for measurement, source in zip(measurements, sources, strict=True):
+        save_measurement(measurement, database_file, source=source)
+    save_check_in("Oslo", "2026-06-17", database_file)
+    save_check_in("Oslo", "2026-08-22", database_file)
+
+    reconcile_check_in_measurements(database_file)
+    with sqlite3.connect(database_file) as connection:
+        first_result = connection.execute(
+            """
+            SELECT date, daily_increase, total_increase, source
+            FROM daylight_measurements
+            ORDER BY date
+            """
+        ).fetchall()
+    reconcile_check_in_measurements(database_file)
+    with sqlite3.connect(database_file) as connection:
+        second_result = connection.execute(
+            """
+            SELECT date, daily_increase, total_increase, source
+            FROM daylight_measurements
+            ORDER BY date
+            """
+        ).fetchall()
+
+    assert first_result == [
+        ("2026-01-01", "00:00:00", "00:00:00", "historical_grua_excel"),
+        ("2026-06-17", "00:00:00", "02:00:00", "api"),
+        ("2026-06-18", "00:30:00", "02:30:00", "api"),
+        ("2026-08-22", "01:00:00", "03:00:00", "api"),
+    ]
+    assert second_result == first_result

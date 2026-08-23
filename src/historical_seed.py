@@ -10,6 +10,7 @@ try:
     from .sqlite_storage import (
         DATABASE_FILE,
         has_measurements_from_source,
+        reconcile_check_in_measurements,
         save_check_in,
         save_measurements,
     )
@@ -20,6 +21,7 @@ except ImportError:
     from sqlite_storage import (
         DATABASE_FILE,
         has_measurements_from_source,
+        reconcile_check_in_measurements,
         save_check_in,
         save_measurements,
     )
@@ -102,3 +104,4 @@ def seed_historical_data(
     seed_historical_api_measurements(database_file, api_file)
     seed_historical_grua_measurements(database_file, excel_file)
     seed_historical_check_ins(database_file, check_ins_file)
+    reconcile_check_in_measurements(database_file)
