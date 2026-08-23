@@ -91,6 +91,22 @@ def apply_custom_styles() -> None:
         .daylight-result-card strong {
             color: #111827 !important;
         }
+
+        @media (max-width: 768px) {
+            [data-testid="stMain"] h1 {
+                font-size: 2rem !important;
+                overflow-wrap: normal !important;
+                word-break: keep-all !important;
+            }
+
+            [data-testid="stMain"] h2 {
+                font-size: 1.6rem !important;
+            }
+
+            [data-testid="stMain"] h3 {
+                font-size: 1.3rem !important;
+            }
+        }
         </style>
         """,
         unsafe_allow_html=True,

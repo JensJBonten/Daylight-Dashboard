@@ -12,6 +12,7 @@ from dashboard_components import (
     render_sidebar_controls,
 )
 from dashboard_styles import apply_custom_styles
+from historical_seed import seed_historical_grua_measurements
 from measurement import DaylightMeasurement
 from sqlite_storage import load_measurements
 
@@ -61,6 +62,8 @@ def main() -> None:
     )
 
     apply_custom_styles()
+
+    seed_historical_grua_measurements()
 
     st.title("Dagslysdashboard")
 

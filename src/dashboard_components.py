@@ -57,7 +57,7 @@ def render_sidebar_controls() -> str:
 
         st.caption(
             "Henter dagens dagslysdata fra MET og registrerer "
-            "innsjekkingen din."
+            "dagens felles måling."
         )
 
         if check_in_dates:
@@ -68,7 +68,7 @@ def render_sidebar_controls() -> str:
             ).strftime("%d.%m.%Y")
 
             if already_checked_in_today:
-                st.caption("✓ Du har sjekket inn i dag.")
+                st.caption("✓ Dagens måling er allerede registrert.")
             else:
                 st.caption(
                     f"Sist innsjekket: {formatted_latest_check_in}"
@@ -92,7 +92,7 @@ def render_sidebar_controls() -> str:
             )
 
         button_label = (
-            "Sjekket inn i dag ✓"
+            "Dagens måling registrert ✓"
             if already_checked_in_today
             else "Sjekk inn i dag"
         )

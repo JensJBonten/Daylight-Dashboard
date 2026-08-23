@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .formatting import format_duration
-from .measurement import DaylightMeasurement
+try:
+    from .formatting import format_duration
+    from .measurement import DaylightMeasurement
+except ImportError:
+    from formatting import format_duration
+    from measurement import DaylightMeasurement
 
 
 
