@@ -1,15 +1,53 @@
+import csv
 import sqlite3
 
 from src.data_loader import DATA_FILE, load_daylight_data
 from src.historical_seed import (
     HISTORICAL_GRUA_SOURCE,
+    seed_historical_api_measurements,
+    seed_historical_check_ins,
+    seed_historical_data,
     seed_historical_grua_measurements,
 )
 from src.measurement import DaylightMeasurement
 from src.sqlite_storage import (
+    get_latest_check_in_measurement,
+    load_check_in_dates,
     load_measurements,
     save_measurement,
 )
+
+
+MEASUREMENT_FIELDS = (
+    "date",
+    "location_name",
+    "day_length",
+    "sunrise",
+    "sunset",
+    "daily_increase",
+    "total_increase",
+    "source",
+)
+
+
+def write_csv(file_path, field_names, rows):
+    with file_path.open("w", encoding="utf-8", newline="") as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=field_names)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def api_row(date, location_name="Oslo", day_length="12:00:00"):
+    return {
+        "date": date,
+        "location_name": location_name,
+        "day_length": day_length,
+        "sunrise": "06:00:00",
+        "sunset": "18:00:00",
+        "daily_increase": "00:05:00",
+        "total_increase": "01:00:00",
+        "source": "api",
+    }
 
 
 def test_fresh_database_is_seeded_with_historical_grua_data(tmp_path):
@@ -74,3 +112,113 @@ def test_unrelated_api_data_does_not_prevent_historical_seed(tmp_path):
 
     assert api_source == ("api",)
     assert historical_count == len(load_daylight_data(DATA_FILE))
+
+
+def test_api_history_and_check_ins_are_seeded_into_fresh_database(tmp_path):
+    database_file = tmp_path / "daylight.db"
+    api_file = tmp_path / "api.csv"
+    check_ins_file = tmp_path / "check_ins.csv"
+    write_csv(api_file, MEASUREMENT_FIELDS, [api_row("2026-06-17")])
+    write_csv(
+        check_ins_file,
+        ("date", "location_name"),
+        [{"date": "2026-06-17", "location_name": "Oslo"}],
+    )
+
+    seed_historical_api_measurements(database_file, api_file)
+    seed_historical_check_ins(database_file, check_ins_file)
+
+    measurements = load_measurements(database_file)
+    assert len(measurements) == 1
+    assert measurements[0].date == "2026-06-17"
+    assert load_check_in_dates("Oslo", database_file) == ["2026-06-17"]
+    with sqlite3.connect(database_file) as connection:
+        source = connection.execute(
+            "SELECT source FROM daylight_measurements"
+        ).fetchone()
+    assert source == ("api",)
+
+
+def test_complete_historical_seed_is_idempotent_and_histories_coexist(tmp_path):
+    database_file = tmp_path / "daylight.db"
+    api_file = tmp_path / "api.csv"
+    check_ins_file = tmp_path / "check_ins.csv"
+    write_csv(api_file, MEASUREMENT_FIELDS, [api_row("2026-06-17")])
+    write_csv(
+        check_ins_file,
+        ("date", "location_name"),
+        [{"date": "2026-06-17", "location_name": "Oslo"}],
+    )
+
+    for _ in range(2):
+        seed_historical_data(
+            database_file=database_file,
+            api_file=api_file,
+            check_ins_file=check_ins_file,
+        )
+
+    measurements = load_measurements(database_file)
+    assert len(measurements) == len(load_daylight_data(DATA_FILE)) + 1
+    assert {measurement.location_name for measurement in measurements} == {
+        "Grua",
+        "Oslo",
+    }
+    assert load_check_in_dates("Oslo", database_file) == ["2026-06-17"]
+
+
+def test_existing_runtime_measurement_wins_over_seed_conflict(tmp_path):
+    database_file = tmp_path / "daylight.db"
+    api_file = tmp_path / "api.csv"
+    runtime_measurement = DaylightMeasurement(
+        date="2026-06-17",
+        location_name="Oslo",
+        day_length="13:37:00",
+        sunrise="05:30:00",
+        sunset="19:07:00",
+        daily_increase="00:10:00",
+        total_increase="02:00:00",
+    )
+    save_measurement(runtime_measurement, database_file, source="api")
+    write_csv(
+        api_file,
+        MEASUREMENT_FIELDS,
+        [api_row("2026-06-17", day_length="12:00:00")],
+    )
+
+    seed_historical_api_measurements(database_file, api_file)
+
+    assert load_measurements(database_file) == [runtime_measurement]
+
+
+def test_seeded_check_ins_work_for_previous_check_in_lookup(tmp_path):
+    database_file = tmp_path / "daylight.db"
+    api_file = tmp_path / "api.csv"
+    check_ins_file = tmp_path / "check_ins.csv"
+    write_csv(
+        api_file,
+        MEASUREMENT_FIELDS,
+        [
+            api_row("2026-06-17", day_length="12:00:00"),
+            api_row("2026-06-18", day_length="12:05:00"),
+        ],
+    )
+    write_csv(
+        check_ins_file,
+        ("date", "location_name"),
+        [
+            {"date": "2026-06-17", "location_name": "Oslo"},
+            {"date": "2026-06-18", "location_name": "Oslo"},
+        ],
+    )
+    seed_historical_api_measurements(database_file, api_file)
+    seed_historical_check_ins(database_file, check_ins_file)
+
+    previous = get_latest_check_in_measurement(
+        "Oslo",
+        before_date="2026-06-18",
+        database_file=database_file,
+    )
+
+    assert previous is not None
+    assert previous.date == "2026-06-17"
+    assert previous.day_length == "12:00:00"

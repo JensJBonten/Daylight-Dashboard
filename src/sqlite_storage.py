@@ -74,6 +74,7 @@ def save_check_in(
     location_name: str,
     check_in_date: str,
     database_file: Path = DATABASE_FILE,
+    overwrite_existing: bool = True,
 ) -> None:
     """Register one check-in per location and date."""
 
@@ -83,17 +84,22 @@ def save_check_in(
         ZoneInfo("Europe/Oslo")
     ).isoformat()
 
+    conflict_action = (
+        "DO UPDATE SET created_at = excluded.created_at"
+        if overwrite_existing
+        else "DO NOTHING"
+    )
+
     with sqlite3.connect(database_file) as connection:
         connection.execute(
-            """
+            f"""
             INSERT INTO daylight_check_ins (
                 date,
                 location_name,
                 created_at
             )
             VALUES (?, ?, ?)
-            ON CONFLICT(date, location_name) DO UPDATE SET
-                created_at = excluded.created_at
+            ON CONFLICT(date, location_name) {conflict_action}
             """,
             (
                 check_in_date,
