@@ -1,345 +1,199 @@
 # Daylight Dashboard
 
-A Python and Streamlit application for tracking changes in daylight length, sunrise, and sunset across selected Norwegian locations.
+[![Tests](https://github.com/JensJBonten/Daylight-Dashboard/actions/workflows/tests.yml/badge.svg)](https://github.com/JensJBonten/Daylight-Dashboard/actions/workflows/tests.yml)
 
-The project started as a pandas exercise based on manually recorded Excel data. It has since developed into a tested data pipeline that imports historical measurements, fetches current data from the MET Sunrise API, calculates daylight changes, stores measurements in SQLite, and presents the results in an interactive dashboard.
+A Python and Streamlit application for tracking and visualizing how sunrise, sunset, and day length change throughout the year in Norway.
 
-## Dashboard
+The project started as a simple way to make the transition from the dark winter months toward longer and brighter days easier to follow. It has since grown into an application with live API data, historical measurements, reference curves, shared check-ins, automated updates, testing, and public deployment.
 
-### Overview
+## Live Demo
 
-![Dashboard overview](screenshots/dashboard/dashboard-overview.png)
-
-### Successful data update
-
-![Successful data update](screenshots/dashboard/dashboard-fetch-success.png)
-
-### Daylight charts
-
-![Daylight charts](screenshots/dashboard/dashboard-charts.png)
-
-### Measurement history
-
-![Measurement history](screenshots/dashboard/dashboard-history.png)
-
-Older screenshots are preserved in `screenshots/progress/` to document the development of the project.
+- [Streamlit Community Cloud](https://daylight-dashboard-jb.streamlit.app/)
+- [Databricks Apps](https://daylight-dashboard-jb-7474660523267861.aws.databricksapps.com/)
 
 ## Features
 
-* Imports historical daylight measurements from an Excel workbook
-* Normalizes Norwegian column names into consistent internal field names
-* Converts Excel dates and time values with pandas
-* Maps cleaned rows into typed `DaylightMeasurement` objects
-* Stores measurement history in SQLite
-* Fetches sunrise and sunset data from the MET Sunrise API
-* Supports Grua, Oslo, Bergen, and Tromsø
-* Calculates total day length
-* Calculates change since the previous saved measurement
-* Calculates total change since the first measurement
-* Handles both increasing and decreasing daylight
-* Uses the `Europe/Oslo` timezone with automatic summer and winter offsets
-* Shows the latest measurement as dashboard metrics
-* Displays a day-length line chart
-* Displays daily daylight changes as a bar chart
-* Includes a formatted measurement-history table
-* Filters measurements by selected location
-* Supports an empty database and first-time API updates
-* Shows loading, success, empty, and error states
-* Uses service-level error handling to avoid exposing technical tracebacks
-* Includes automated tests for the core data flow
-* Preserves JSON storage as an optional legacy storage path
+### Daylight tracking
 
-## Design Process
+- Bergen, Grua, Oslo, and Tromsø, with Oslo selected by default
+- Sunrise, sunset, and day length from the MET Norway Sunrise API
+- Historical daylight measurements
+- Weekly MET reference curve
+- Shared daily check-ins
+- Change since the previous actual check-in
+- Total daylight change since the first stored measurement
+- Summer and winter solstice information
+- Days until the next solstice
+- Daylight change since the previous solstice
 
-The dashboard layout was planned with low-fidelity wireframes before implementation.
+### Dashboard
 
-The wireframes cover:
+- Seasonal themes throughout the year
+- Seasonal theme preview
+- Responsive desktop and mobile layout
+- Graceful handling of unavailable reference data
+- Historical state restored automatically on fresh deployments
 
-* Normal dashboard state
-* Empty database state
-* Selected location without saved data
-* API error state
-
-The exported wireframes are stored in:
-
-```text
-docs/design/
-```
-
-The final interface uses a weather-inspired theme with:
-
-* A light sky-blue main area
-* A green sidebar
-* Blue controls and table elements
-* Green chart lines and bars
-* Clear visual separation between metrics, charts, and history
-
-## Technology
-
-* Python
-* Streamlit
-* pandas
-* SQLite
-* requests
-* pytest
-* Matplotlib
-* MET Sunrise API
-* `ZoneInfo`
-* `tzdata`
+Check-ins are currently shared application state. The application does not have individual user accounts or per-user histories.
 
 ## Architecture
 
-The application separates API access, application logic, storage, formatting, and presentation into individual modules.
-
-### API update flow
+The application separates API access, application logic, storage, historical data handling, and presentation into individual modules.
 
 ```text
-MET Sunrise API
+Streamlit Dashboard
         |
-        v
-API client
+        +--> Measurement Service
+        |       |
+        |       +--> MET Norway API
+        |       |
+        |       +--> SQLite
         |
-        v
-Measurement service
+        +--> Historical Seed Data
+        |       |
+        |       +--> Excel history
+        |       +--> Historical API measurements
+        |       +--> Historical check-ins
         |
-        v
-Historical calculations
-        |
-        v
-SQLite storage
-        |
-        v
-Streamlit dashboard
+        +--> Weekly MET Reference Data
+                |
+                +--> Comparison chart
 ```
 
-### Historical import flow
+New measurements are fetched from MET and stored in SQLite. Historical measurements and check-ins are bundled as seed data so important project history can be restored when a deployment starts with a fresh database.
 
-```text
-Excel workbook
-        |
-        v
-pandas DataFrame
-        |
-        v
-DaylightMeasurement objects
-        |
-        v
-SQLite storage
-        |
-        v
-Streamlit dashboard
-```
+The application also handles Norwegian summer and winter UTC offsets automatically using `Europe/Oslo`. Service-level errors are converted into readable dashboard messages instead of exposing technical tracebacks.
 
-## Error Handling
+## Tech Stack
 
-The service layer exposes a single application-level exception:
+- **Python 3.11+**
+- **Streamlit**
+- **pandas**
+- **Altair**
+- **SQLite**
+- **requests**
+- **pytest**
+- **GitHub Actions**
+- **MET Norway Sunrise API**
+- **Databricks Apps**
 
-```text
-DaylightServiceError
-```
-
-Network failures, invalid MET responses, processing errors, and SQLite errors are converted into this predictable error type.
-
-The dashboard can therefore display a clear error message without exposing a technical traceback to the user.
-
-## Timezone Handling
-
-MET Sunrise requests require a UTC offset.
-
-The application uses:
-
-```text
-Europe/Oslo
-```
-
-The correct offset is calculated automatically for the selected date:
-
-```text
-Winter: +01:00
-Summer: +02:00
-```
-
-This avoids hardcoding Norwegian winter time throughout the year.
+Matplotlib is also used by the optional command-line chart export.
 
 ## Project Structure
 
 ```text
-.streamlit/
-  config.toml             Streamlit theme configuration
-
-data/
-  Dagens lengde (2).xlsx  Historical source workbook
-
-docs/
-  design/                 Exported dashboard wireframes
-
-screenshots/
-  dashboard/
-    dashboard-overview.png
-    dashboard-fetch-success.png
-    dashboard-charts.png
-    dashboard-history.png
-
-  progress/               Older screenshots showing project development
-
-src/
-  __init__.py
-  api_client.py           MET API requests, locations, and timezone offsets
-  dashboard.py            Streamlit user interface
-  data_loader.py          Excel loading and column normalization
-  formatting.py           User-facing date, time, and duration formatting
-  main.py                 Command-line entry point
-  measurement.py          DaylightMeasurement data model
-  measurement_mapper.py   Converts DataFrame rows into measurement objects
-  measurement_service.py  API workflow, calculations, storage, and error handling
-  plotting.py             PNG chart export
-  reporting.py            Terminal reporting
-  sqlite_storage.py       Main SQLite storage layer
-  storage.py              Optional legacy JSON storage
-  time_utils.py           Duration parsing and calculations
-
-tests/
-  conftest.py
-  test_api_client.py
-  test_formatting.py
-  test_measurement_mapper.py
-  test_measurement_service.py
-  test_reporting.py
-  test_sqlite_storage.py
-  test_storage.py
-  test_time_utils.py
+Daylight-Dashboard/
+│
+├── .github/
+│   └── workflows/                 GitHub Actions
+│
+├── data/                          Historical and reference data
+│
+├── scripts/
+│   ├── export_historical_api_data.py
+│   └── generate_reference_data.py
+│
+├── src/
+│   ├── dashboard.py               Streamlit entry point
+│   ├── dashboard_components.py    Dashboard components
+│   ├── dashboard_styles.py        Dashboard styling
+│   ├── measurement_service.py     Measurement workflow
+│   ├── sqlite_storage.py          SQLite persistence
+│   ├── historical_seed.py         Historical data restoration
+│   ├── reference_data.py          Weekly reference data
+│   └── seasonal.py                Seasonal and solstice logic
+│
+├── tests/                          Pytest test suite
+├── app.yaml                        Databricks Apps configuration
+└── requirements.txt
 ```
 
-## Setup
+The repository also contains the original command-line workflow and legacy storage functionality used during the earlier stages of the project.
 
-Python 3.10 or newer is recommended.
+## Running Locally
 
-### Create a virtual environment
+Clone the repository:
+
+```bash
+git clone https://github.com/JensJBonten/Daylight-Dashboard.git
+cd Daylight-Dashboard
+```
+
+Create and activate a virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-### Activate on Windows PowerShell
+Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-### Activate on macOS or Linux
+macOS or Linux:
 
 ```bash
 source .venv/bin/activate
 ```
 
-### Install dependencies
+Install the dependencies:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-## Running the Dashboard
-
-Start Streamlit from the project root:
+Start the dashboard:
 
 ```bash
 streamlit run src/dashboard.py
 ```
 
-The dashboard supports an empty SQLite database.
+## Testing and Automation
 
-Select a location in the sidebar and click **Hent dagens data** to create the first measurement.
-
-## Importing Historical Data
-
-Historical measurements can be imported from the Excel workbook through the command-line interface:
-
-```bash
-python -m src.main --save-sqlite --location Grua
-```
-
-The historical import is optional and is not required before starting the dashboard.
-
-## Command-Line Usage
-
-Run the terminal summary and preview:
-
-```bash
-python -m src.main
-```
-
-Export a PNG chart:
-
-```bash
-python -m src.main --plot output/daylight.png
-```
-
-## Running Tests
-
-Run the complete test suite:
+Run the test suite with:
 
 ```bash
 python -m pytest
 ```
 
-The tests cover:
+The project currently has **65 passing pytest tests**, covering areas such as:
 
-* MET API response parsing
-* API request parameters
-* Norwegian summer and winter offsets
-* Day-length calculations
-* Positive and negative daylight changes
-* User-facing date and duration formatting
-* Measurement mapping
-* Service-level error handling
-* SQLite storage
-* Legacy JSON storage
-* Terminal reporting
+- MET API handling
+- daylight calculations
+- SQLite storage and check-ins
+- historical data seeding and reconciliation
+- reference and solstice logic
+- seasonal behavior and formatting
 
-## Storage
+GitHub Actions automatically runs the test suite on pushes and pull requests.
 
-SQLite is the primary storage system used by the dashboard.
+A separate scheduled workflow updates the weekly MET reference dataset and can also be triggered manually.
 
-Each measurement contains:
+## Data and Persistence
 
-* Date
-* Location
-* Day length
-* Sunrise
-* Sunset
-* Change since the previous measurement
-* Total change since the first measurement
-* Data source
+SQLite is used for runtime storage.
 
-A uniqueness constraint prevents duplicate measurements for the same date and location.
+Historical data comes from several sources:
 
-JSON storage remains available in `src/storage.py` as an optional legacy implementation.
+- the original Grua Excel dataset
+- historical MET API measurements
+- historical shared check-ins
+- weekly MET reference data
 
-## Current Status
+A local SQLite database inside a hosted application is not treated as permanent production storage. Important historical state is therefore stored as tracked seed data and restored automatically when a fresh database is created.
 
-The project is a working v1.0 candidate with:
+Existing runtime measurements are preserved during the seeding process.
 
-* A complete Excel-to-SQLite import flow
-* A working MET API-to-SQLite flow
-* Multiple supported locations
-* Automatic timezone handling
-* Positive and negative daylight calculations
-* Location filtering
-* Loading and user-feedback states
-* Service-level error handling
-* Norwegian display formatting
-* Responsive dashboard metrics
-* Line and bar charts
-* Measurement history
-* Documented UX wireframes
-* Automated tests for the core functionality
+## Deployment
 
-## Planned Improvements
+The application is deployed from the GitHub repository to both Streamlit Community Cloud and Databricks Apps.
 
-* Add GitHub Actions for automated test execution
-* Deploy the dashboard
-* Add validation for unexpected Excel formats
-* Add more Norwegian locations
-* Add comparison views between locations
-* Improve accessibility and mobile layout
-* Consider optional weather and temperature data
+`src/dashboard.py` is the Streamlit entry point, while Databricks Apps uses the start command defined in `app.yaml`.
+
+## Future Improvements
+
+- Move runtime state to a persistent production database
+- Explore optional individual or anonymous browser-based check-ins
+- Add more locations and reference datasets
+- Continue improving accessibility and mobile usability
