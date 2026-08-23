@@ -8,8 +8,10 @@ from zoneinfo import ZoneInfo
 
 try:
     from .measurement import DaylightMeasurement
+    from .time_utils import calculate_duration_difference
 except ImportError:
     from measurement import DaylightMeasurement
+    from time_utils import calculate_duration_difference
 
 DATABASE_FILE = Path(
     os.getenv("DAYLIGHT_DB_PATH", "data/daylight.db")
@@ -171,6 +173,81 @@ def get_latest_check_in_measurement(
         return None
 
     return _measurement_from_row(row)
+
+
+def reconcile_check_in_measurements(
+    database_file: Path = DATABASE_FILE,
+) -> None:
+    """Recalculate derived values for measurements with actual check-ins."""
+
+    initialize_database(database_file)
+
+    with sqlite3.connect(database_file) as connection:
+        check_in_rows = connection.execute(
+            """
+            SELECT
+                measurement.date,
+                measurement.location_name,
+                measurement.day_length
+            FROM daylight_measurements AS measurement
+            INNER JOIN daylight_check_ins AS check_in
+                ON check_in.date = measurement.date
+                AND check_in.location_name = measurement.location_name
+            ORDER BY measurement.location_name, measurement.date
+            """
+        ).fetchall()
+        first_measurement_rows = connection.execute(
+            """
+            SELECT measurement.location_name, measurement.day_length
+            FROM daylight_measurements AS measurement
+            INNER JOIN (
+                SELECT location_name, MIN(date) AS first_date
+                FROM daylight_measurements
+                GROUP BY location_name
+            ) AS first_measurement
+                ON first_measurement.location_name = measurement.location_name
+                AND first_measurement.first_date = measurement.date
+            """
+        ).fetchall()
+
+        first_day_length_by_location = dict(first_measurement_rows)
+        previous_check_in_by_location: dict[str, str] = {}
+        updates = []
+
+        for measurement_date, location_name, day_length in check_in_rows:
+            previous_day_length = previous_check_in_by_location.get(
+                location_name
+            )
+            daily_increase = (
+                calculate_duration_difference(
+                    day_length,
+                    previous_day_length,
+                )
+                if previous_day_length is not None
+                else "00:00:00"
+            )
+            total_increase = calculate_duration_difference(
+                day_length,
+                first_day_length_by_location[location_name],
+            )
+            updates.append(
+                (
+                    daily_increase,
+                    total_increase,
+                    measurement_date,
+                    location_name,
+                )
+            )
+            previous_check_in_by_location[location_name] = day_length
+
+        connection.executemany(
+            """
+            UPDATE daylight_measurements
+            SET daily_increase = ?, total_increase = ?
+            WHERE date = ? AND location_name = ?
+            """,
+            updates,
+        )
 
 
 def save_measurement(

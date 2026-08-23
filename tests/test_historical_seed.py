@@ -14,6 +14,7 @@ from src.sqlite_storage import (
     get_latest_check_in_measurement,
     load_check_in_dates,
     load_measurements,
+    save_check_in,
     save_measurement,
 )
 
@@ -222,3 +223,51 @@ def test_seeded_check_ins_work_for_previous_check_in_lookup(tmp_path):
     assert previous is not None
     assert previous.date == "2026-06-17"
     assert previous.day_length == "12:00:00"
+
+
+def test_complete_seed_reconciles_stale_runtime_check_in(tmp_path):
+    database_file = tmp_path / "daylight.db"
+    api_file = tmp_path / "api.csv"
+    check_ins_file = tmp_path / "check_ins.csv"
+    current_measurement = DaylightMeasurement(
+        date="2026-08-23",
+        location_name="Oslo",
+        day_length="14:00:00",
+        sunrise="06:00:00",
+        sunset="20:00:00",
+        daily_increase="00:00:00",
+        total_increase="00:00:00",
+    )
+    save_measurement(current_measurement, database_file, source="api")
+    save_check_in("Oslo", "2026-08-23", database_file)
+    write_csv(
+        api_file,
+        MEASUREMENT_FIELDS,
+        [
+            api_row("2026-08-20", day_length="16:00:00"),
+            api_row("2026-08-21", day_length="15:00:00"),
+            api_row("2026-08-22", day_length="14:30:00"),
+            api_row("2026-08-23", day_length="13:00:00"),
+        ],
+    )
+    write_csv(
+        check_ins_file,
+        ("date", "location_name"),
+        [{"date": "2026-08-21", "location_name": "Oslo"}],
+    )
+
+    seed_historical_data(
+        database_file=database_file,
+        api_file=api_file,
+        check_ins_file=check_ins_file,
+    )
+
+    with sqlite3.connect(database_file) as connection:
+        current_result = connection.execute(
+            """
+            SELECT day_length, daily_increase, total_increase, source
+            FROM daylight_measurements
+            WHERE date = '2026-08-23' AND location_name = 'Oslo'
+            """
+        ).fetchone()
+    assert current_result == ("14:00:00", "-01:00:00", "-02:00:00", "api")
