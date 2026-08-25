@@ -83,8 +83,6 @@ def main() -> None:
 
     measurements, measurements_dataframe = load_dashboard_data()
 
-    # Reference data is independent of SQLite and remains available without
-    # personal measurements.
     if measurements_dataframe.empty:
         selected_measurements_dataframe = pd.DataFrame()
     else:
@@ -93,23 +91,19 @@ def main() -> None:
             == selected_location
         ].copy()
 
-    render_reference_chart(
-        selected_location,
-        selected_measurements_dataframe,
-        season_theme.accent,
-    )
-
     if not measurements:
+        render_reference_chart(
+            selected_location,
+            selected_measurements_dataframe,
+            season_theme.accent,
+        )
+
         st.info(
             "Ingen egne målinger er lagret ennå. "
             "Bruk «Sjekk inn i dag» i sidepanelet "
             "for å registrere den første målingen."
         )
         return
-
-    st.caption(
-        f"{len(measurements)} lagrede målinger totalt"
-    )
 
     filtered_measurements = [
         measurement
@@ -118,9 +112,17 @@ def main() -> None:
     ]
 
     if not filtered_measurements:
+        render_reference_chart(
+            selected_location,
+            selected_measurements_dataframe,
+            season_theme.accent,
+        )
+
         st.info(
-            f"Det finnes ingen egne målinger for {selected_location} ennå. "
-            "MET-referansekurven over kan fortsatt brukes som sammenligning."
+            f"Det finnes ingen egne målinger for "
+            f"{selected_location} ennå. "
+            "MET-referansekurven kan fortsatt "
+            "brukes som sammenligning."
         )
         return
 
@@ -130,6 +132,16 @@ def main() -> None:
         latest_measurement,
         filtered_measurements,
         daylight_change_since_solstice,
+    )
+
+    render_reference_chart(
+        selected_location,
+        selected_measurements_dataframe,
+        season_theme.accent,
+    )
+
+    st.caption(
+        f"{len(measurements)} lagrede målinger totalt"
     )
 
     render_charts(
