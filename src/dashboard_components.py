@@ -135,10 +135,10 @@ def render_sidebar_controls() -> str:
 
 def render_season_overview(
     selected_location: str,
-) -> SeasonTheme:
-    """Render season, solstices, and daylight change for a location."""
+) -> tuple[SeasonTheme, float | None]:
+    """Render the active season and return its theme and solstice change."""
 
-    today = date.today()
+    today = date.today()  
 
     # Previewing a season changes only the visual theme.
     season_preview_dates = {
@@ -151,18 +151,27 @@ def render_season_overview(
         "🎅 Jul": date(today.year, 12, 15),
     }
 
-    with st.sidebar.expander("Forhåndsvis sesongtema"):
+    with st.sidebar.expander(
+        "Forhåndsvis sesongtema"
+    ):
         selected_preview = st.selectbox(
             "Forhåndsvis tema",
-            options=list(season_preview_dates.keys()),
+            options=list(
+                season_preview_dates.keys()
+            ),
         )
 
         st.caption(
             "Forhåndsvisningen endrer kun sesongtemaet."
         )
 
-    theme_date = season_preview_dates[selected_preview]
-    season = get_season_theme(theme_date)
+    theme_date = season_preview_dates[
+        selected_preview
+    ]
+
+    season = get_season_theme(
+        theme_date
+    )
 
     month_names = {
         1: "Januar",
@@ -179,10 +188,17 @@ def render_season_overview(
         12: "Desember",
     }
 
-    month_name = month_names[theme_date.month]
+    month_name = month_names[
+        theme_date.month
+    ]
 
-    if season.name in ("Halloween", "Jul"):
-        season_heading = f"{month_name} ({season.name})"
+    if season.name in (
+        "Halloween",
+        "Jul",
+    ):
+        season_heading = (
+            f"{month_name} ({season.name})"
+        )
     else:
         season_heading = month_name
 
@@ -191,16 +207,20 @@ def render_season_overview(
         accent_color=season.accent,
     )
 
-    # Solstice and daylight calculations always use the actual date.
-    previous_solstice = get_previous_solstice(today)
-    next_solstice = get_next_solstice(today)
+    # Solstice calculations always use the real date,
+    # even when another visual theme is previewed.
+    next_solstice = get_next_solstice(
+        today
+    )
 
     days_until_solstice = (
         next_solstice.date - today
     ).days
 
-    formatted_next_solstice = next_solstice.date.strftime(
-        "%d.%m.%Y"
+    formatted_next_solstice = (
+        next_solstice.date.strftime(
+            "%d.%m.%Y"
+        )
     )
 
     daylight_change = None
@@ -212,26 +232,15 @@ def render_season_overview(
         )
 
         if not reference_data.empty:
-            daylight_change = calculate_change_since_solstice(
-                reference_data,
-                today,
+            daylight_change = (
+                calculate_change_since_solstice(
+                    reference_data,
+                    today,
+                )
             )
 
     except ReferenceDataError:
         daylight_change = None
-
-    if daylight_change is not None:
-        formatted_change = format_hours_change(daylight_change)
-
-        daylight_change_text = (
-            f"{formatted_change} dagslys siden "
-            f"{previous_solstice.name.lower()}"
-        )
-    else:
-        daylight_change_text = (
-            "Ingen referansedata tilgjengelig "
-            "for solvervsammenligning."
-        )
 
     season_card = f"""
 <div style="
@@ -239,21 +248,15 @@ background-color: {season.background};
 border: 1px solid {season.accent};
 border-left: 6px solid {season.accent};
 border-radius: 12px;
-padding: 18px 20px;
+padding: 16px 20px;
 margin: 18px 0 22px 0;
 ">
 <div style="
 font-size: 1.25rem;
 font-weight: 800;
-margin-bottom: 8px;
+margin-bottom: 7px;
 ">
 {season.icon} {season_heading}
-</div>
-<div style="
-font-size: 1rem;
-margin-bottom: 5px;
-">
-{previous_solstice.icon} {daylight_change_text}
 </div>
 <div style="
 font-size: 0.95rem;
@@ -269,9 +272,7 @@ font-size: 0.95rem;
         unsafe_allow_html=True,
     )
 
-    return season
-
-
+    return season, daylight_change
 def render_latest_metrics(
     latest_measurement: DaylightMeasurement,
 ) -> None:
@@ -326,12 +327,11 @@ def render_latest_metrics(
         metrics,
         strict=True,
     ):
-        with column:
-            with st.container(border=True):
-                st.metric(
-                    label=label,
-                    value=value,
-                )
+        with column, st.container(border=True):
+            st.metric(
+                label=label,
+                value=value,
+            )
 
 
 def render_reference_chart(

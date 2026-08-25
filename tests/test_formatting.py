@@ -1,6 +1,7 @@
 import pandas as pd
 
 from src.formatting import (
+    format_change_as_story,
     format_change_for_display,
     format_date_for_display,
     format_duration,
@@ -55,3 +56,29 @@ def test_format_change_for_display_handles_zero():
 
 def test_format_change_for_display_handles_hours_and_minutes():
     assert format_change_for_display("11:20:00") == "+11 t 20 min"
+
+def test_format_change_story_handles_shorter_daylight():
+    assert (
+        format_change_as_story(
+            "-00:42:00"
+        )
+        == "42 min kortere"
+    )
+
+
+def test_format_change_story_handles_longer_daylight():
+    assert (
+        format_change_as_story(
+            "01:15:00"
+        )
+        == "1 t 15 min lengre"
+    )
+
+
+def test_format_change_story_handles_no_change():
+    assert (
+        format_change_as_story(
+            "00:00:00"
+        )
+        == "Ingen endring"
+    )

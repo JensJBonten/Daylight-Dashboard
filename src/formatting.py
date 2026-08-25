@@ -86,3 +86,28 @@ def format_change_for_display(duration_value: str) -> str:
         readable_duration = f"{minutes} min"
 
     return f"{sign}{readable_duration}"
+
+
+def format_change_as_story(
+    duration_value: str,
+) -> str:
+    """Format a duration change as a readable daylight story."""
+
+    total_seconds = _duration_to_seconds(
+        duration_value
+    )
+
+    if total_seconds == 0:
+        return "Ingen endring"
+
+    readable_duration = format_change_for_display(
+        duration_value
+    ).lstrip("+-−").strip()
+
+    direction = (
+        "lengre"
+        if total_seconds > 0
+        else "kortere"
+    )
+
+    return f"{readable_duration} {direction}"

@@ -255,3 +255,27 @@ def format_hours_change(
         parts.append(f"{minutes} min")
 
     return sign + " ".join(parts)
+
+def format_hours_change_as_story(
+    change_in_hours: float,
+) -> str:
+    """Format a decimal-hour change as a readable daylight story."""
+
+    total_minutes = round(
+        change_in_hours * 60
+    )
+
+    if total_minutes == 0:
+        return "Ingen endring"
+
+    readable_duration = format_hours_change(
+        change_in_hours
+    ).lstrip("+−-").strip()
+
+    direction = (
+        "lengre"
+        if total_minutes > 0
+        else "kortere"
+    )
+
+    return f"{readable_duration} {direction}"

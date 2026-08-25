@@ -8,6 +8,7 @@ from src.seasonal import (
     format_hours_change,
     get_next_solstice,
     get_season_theme,
+    format_hours_change_as_story,
 )
 
 
@@ -153,4 +154,30 @@ def test_format_positive_minute_change():
     assert (
         format_hours_change(0.25)
         == "+15 min"
+    )
+    
+def test_format_solstice_change_as_shorter_story():
+    assert (
+        format_hours_change_as_story(
+            -3.5
+        )
+        == "3 t 30 min kortere"
+    )
+
+
+def test_format_solstice_change_as_longer_story():
+    assert (
+        format_hours_change_as_story(
+            0.25
+        )
+        == "15 min lengre"
+    )
+
+
+def test_format_solstice_change_story_handles_zero():
+    assert (
+        format_hours_change_as_story(
+            0.0
+        )
+        == "Ingen endring"
     )

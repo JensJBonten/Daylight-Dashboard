@@ -74,7 +74,10 @@ def main() -> None:
 
     selected_location = render_sidebar_controls()
 
-    season_theme = render_season_overview(
+    (
+        season_theme,
+        _daylight_change_since_solstice,
+    ) = render_season_overview(
         selected_location
     )
 
