@@ -76,7 +76,7 @@ def main() -> None:
 
     (
         season_theme,
-        _daylight_change_since_solstice,
+        daylight_change_since_solstice,
     ) = render_season_overview(
         selected_location
     )
@@ -127,7 +127,9 @@ def main() -> None:
     latest_measurement = filtered_measurements[-1]
 
     render_latest_metrics(
-        latest_measurement
+        latest_measurement,
+        filtered_measurements,
+        daylight_change_since_solstice,
     )
 
     render_charts(
