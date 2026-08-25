@@ -71,6 +71,59 @@ def save_plot(
     plt.close(fig)
 
 
+def _build_daylight_y_scale(
+    reference_data: pd.DataFrame,
+    measurement_data: pd.DataFrame,
+) -> alt.Scale:
+    """Build a shared Y scale with visible space around the data."""
+
+    daylight_values = [
+        reference_data["daylight_hours"]
+    ]
+
+    if not measurement_data.empty:
+        daylight_values.append(
+            measurement_data["Dagslengde (timer)"]
+        )
+
+    combined_values = pd.concat(
+        daylight_values,
+        ignore_index=True,
+    ).dropna()
+
+    if combined_values.empty:
+        return alt.Scale(
+            zero=False,
+        )
+
+    minimum_value = float(
+        combined_values.min()
+    )
+
+    maximum_value = float(
+        combined_values.max()
+    )
+
+    value_range = maximum_value - minimum_value
+
+    padding = max(
+        value_range * 0.08,
+        0.5,
+    )
+
+    return alt.Scale(
+        domain=[
+            max(
+                0.0,
+                minimum_value - padding,
+            ),
+            maximum_value + padding,
+        ],
+        zero=False,
+        nice=False,
+    )
+
+
 def build_reference_daylight_chart(
     reference_data: pd.DataFrame,
     measurement_data: pd.DataFrame,
@@ -112,6 +165,11 @@ def build_reference_daylight_chart(
         ]
     )
 
+    y_scale = _build_daylight_y_scale(
+        reference_data,
+        measurement_data,
+    )
+
     reference_chart = (
         alt.Chart(reference_data)
         .mark_line(
@@ -128,9 +186,7 @@ def build_reference_daylight_chart(
             y=alt.Y(
                 "daylight_hours:Q",
                 title="Dagslys (timer)",
-                scale=alt.Scale(
-                    zero=False,
-                ),
+                scale=y_scale,
             ),
             tooltip=[
                 alt.Tooltip(
@@ -171,9 +227,7 @@ def build_reference_daylight_chart(
             y=alt.Y(
                 "Dagslengde (timer):Q",
                 title="Dagslys (timer)",
-                scale=alt.Scale(
-                    zero=False,
-                ),
+                scale=y_scale,
             ),
             tooltip=[
                 alt.Tooltip(
@@ -253,7 +307,7 @@ def build_reference_daylight_chart(
                 "date:T",
                 scale=x_scale,
             ),
-            y=alt.value(12),
+            y=alt.value(16),
             text=alt.Text(
                 "label:N",
             ),
@@ -269,10 +323,22 @@ def build_reference_daylight_chart(
         )
         .properties(
             height=360,
+            padding={
+                "top": 28,
+                "right": 12,
+                "bottom": 10,
+                "left": 8,
+            },
         )
         .interactive()
         .configure(
             background="transparent",
+        )
+        .configure_axis(
+            labelFontSize=12,
+            titleFontSize=13,
+            labelPadding=7,
+            titlePadding=12,
         )
         .configure_view(
             strokeOpacity=0,

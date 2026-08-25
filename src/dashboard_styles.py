@@ -92,6 +92,18 @@ def apply_custom_styles() -> None:
             color: #111827 !important;
         }
 
+        /* Unngå avkorting i det fjerde KPI-kortet */
+        .st-key-change_metric_card [data-testid="stMetricValue"],
+        .st-key-change_metric_card [data-testid="stMetricValue"] > div {
+            max-width: 100% !important;
+            font-size: clamp(1.5rem, 2vw, 1.8rem) !important;
+            line-height: 1.15 !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            word-break: normal !important;
+        }
+
         @media (max-width: 768px) {
             [data-testid="stMain"] h1 {
                 font-size: 2rem !important;

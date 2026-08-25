@@ -443,7 +443,9 @@ def render_latest_metrics(
                 value=value,
             )
 
-    with metric_columns[3]:
+    with metric_columns[3], st.container(
+        key="change_metric_card"
+    ):
         st.metric(
             label=change_label,
             value=change_value,
