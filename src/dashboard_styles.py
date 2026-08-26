@@ -1,126 +1,24 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import streamlit as st
 
 
+STYLES_PATH = (
+    Path(__file__).resolve().parent
+    / "styles"
+    / "dashboard.css"
+)
+
+
 def apply_custom_styles() -> None:
-    """Apply custom styles to the sidebar and confirmation message."""
+    """Apply custom styles to the dashboard."""
+
+    css = STYLES_PATH.read_text(encoding="utf-8")
 
     st.markdown(
-        """
-        <style>
-        /* Overskriften "Kontroller" */
-        [data-testid="stSidebar"] h1,
-        [data-testid="stSidebar"] h2,
-        [data-testid="stSidebar"] h3 {
-            font-size: 1.35rem !important;
-            font-weight: 800 !important;
-            color: #17324D !important;
-        }
-
-        /* Etiketten "Sted" over dropdownen */
-        [data-testid="stSidebar"] label p {
-            font-size: 1rem !important;
-            font-weight: 700 !important;
-            color: #17324D !important;
-        }
-
-        /* Forklaringsteksten under dropdownen */
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            line-height: 1.45 !important;
-            color: #17324D !important;
-        }
-
-        /* Dropdownen for valg av sted */
-        [data-testid="stSidebar"] div[data-baseweb="select"] > div {
-            background-color: #EAF6FF !important;
-            border: 1px solid #5E9FC4 !important;
-            border-radius: 8px !important;
-            color: #111827 !important;
-            min-height: 44px !important;
-        }
-
-        /* Teksten inne i dropdownen */
-        [data-testid="stSidebar"] div[data-baseweb="select"] span {
-            font-size: 1rem !important;
-            font-weight: 700 !important;
-            color: #111827 !important;
-        }
-
-        /* Innsjekkingsknappen */
-        [data-testid="stSidebar"] [data-testid="stButton"] > button {
-            width: 100%;
-            min-height: 44px;
-            background-color: #EAF6FF !important;
-            color: #111827 !important;
-            border: 1px solid #5E9FC4 !important;
-            border-radius: 8px !important;
-            box-shadow: none !important;
-        }
-
-        /* Teksten inne i knappen */
-        [data-testid="stSidebar"] [data-testid="stButton"] button p {
-            font-size: 1rem !important;
-            font-weight: 700 !important;
-            color: #111827 !important;
-        }
-
-        /* Hover-effekt på knappen */
-        [data-testid="stSidebar"] [data-testid="stButton"] > button:hover {
-            background-color: #D8EEFA !important;
-            border-color: #3689B8 !important;
-            color: #111827 !important;
-        }
-
-        /* Bekreftelsesmeldingen etter lagring */
-        .daylight-result-card {
-            background-color: #EAF6FF !important;
-            color: #111827 !important;
-            border: 1px solid #5E9FC4 !important;
-            border-radius: 8px !important;
-            padding: 12px 14px !important;
-            margin: 10px 0 12px 0 !important;
-            font-size: 0.95rem !important;
-            font-weight: 700 !important;
-            line-height: 1.45 !important;
-        }
-
-        .daylight-result-card span,
-        .daylight-result-card strong {
-            color: #111827 !important;
-        }
-
-        /* Unngå avkorting i det fjerde KPI-kortet */
-        .st-key-change_metric_card [data-testid="stMetricValue"],
-        .st-key-change_metric_card [data-testid="stMetricValue"] > div {
-            max-width: 100% !important;
-            font-size: clamp(1.5rem, 2vw, 1.8rem) !important;
-            line-height: 1.15 !important;
-            white-space: normal !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
-            word-break: normal !important;
-        }
-
-        @media (max-width: 768px) {
-            [data-testid="stMain"] h1 {
-                font-size: 2rem !important;
-                overflow-wrap: normal !important;
-                word-break: keep-all !important;
-            }
-
-            [data-testid="stMain"] h2 {
-                font-size: 1.6rem !important;
-            }
-
-            [data-testid="stMain"] h3 {
-                font-size: 1.3rem !important;
-            }
-        }
-        </style>
-        """,
+        f"<style>{css}</style>",
         unsafe_allow_html=True,
     )
 
@@ -129,14 +27,23 @@ def apply_season_sidebar_style(
     background_color: str,
     accent_color: str,
 ) -> None:
-    """Apply the active seasonal theme to the sidebar."""
+    """Apply seasonal accents without recoloring the whole sidebar."""
 
     st.markdown(
         f"""
 <style>
+:root {{
+    --dd-season-background: {background_color};
+    --dd-season-accent: {accent_color};
+}}
+
 [data-testid="stSidebar"] {{
-    background-color: {background_color} !important;
-    border-right-color: {accent_color} !important;
+    background:
+        var(--dd-surface-muted) !important;
+
+    border-right:
+        3px solid
+        var(--dd-season-accent) !important;
 }}
 </style>
 """,

@@ -12,6 +12,13 @@ except ImportError:
     from seasonal import get_solstices
 
 
+AXIS_LABEL_COLOR = "#64748B"
+AXIS_TITLE_COLOR = "#17324D"
+AXIS_GRID_COLOR = "#E7EDF3"
+AXIS_DOMAIN_COLOR = "#CBD5E1"
+REFERENCE_COLOR = "#94A3B8"
+
+
 def save_plot(
     daylight_dataframe: pd.DataFrame,
     output_path: Path,
@@ -83,7 +90,9 @@ def _build_daylight_y_scale(
 
     if not measurement_data.empty:
         daylight_values.append(
-            measurement_data["Dagslengde (timer)"]
+            measurement_data[
+                "Dagslengde (timer)"
+            ]
         )
 
     combined_values = pd.concat(
@@ -104,7 +113,10 @@ def _build_daylight_y_scale(
         combined_values.max()
     )
 
-    value_range = maximum_value - minimum_value
+    value_range = (
+        maximum_value
+        - minimum_value
+    )
 
     padding = max(
         value_range * 0.08,
@@ -129,13 +141,18 @@ def build_reference_daylight_chart(
     measurement_data: pd.DataFrame,
     accent_color: str,
 ) -> alt.LayerChart:
-    """Build a chart with MET data, measurements, and solstices."""
+    """Build the annual daylight reference chart."""
 
     selected_year = int(
-        reference_data["date"].dt.year.iloc[0]
+        reference_data[
+            "date"
+        ].dt.year.iloc[0]
     )
 
-    summer_solstice, winter_solstice = get_solstices(
+    (
+        summer_solstice,
+        winter_solstice,
+    ) = get_solstices(
         selected_year
     )
 
@@ -147,11 +164,18 @@ def build_reference_daylight_chart(
         winter_solstice.date
     )
 
-    chart_start = reference_data["date"].min()
+    chart_start = (
+        reference_data["date"].min()
+    )
+
     chart_end = winter_timestamp
 
     if not measurement_data.empty:
-        measurement_start = measurement_data["date"].min()
+        measurement_start = (
+            measurement_data[
+                "date"
+            ].min()
+        )
 
         chart_start = min(
             chart_start,
@@ -173,15 +197,19 @@ def build_reference_daylight_chart(
     reference_chart = (
         alt.Chart(reference_data)
         .mark_line(
-            opacity=0.30,
+            opacity=0.55,
             strokeWidth=2,
-            color="#6B7280",
+            color=REFERENCE_COLOR,
         )
         .encode(
             x=alt.X(
                 "date:T",
                 title="Dato",
                 scale=x_scale,
+                axis=alt.Axis(
+                    format="%b",
+                    labelAngle=0,
+                ),
             ),
             y=alt.Y(
                 "daylight_hours:Q",
@@ -211,9 +239,10 @@ def build_reference_daylight_chart(
         .mark_line(
             point=alt.OverlayMarkDef(
                 filled=True,
-                size=110,
+                size=105,
                 fill=accent_color,
-                stroke=accent_color,
+                stroke="#FFFFFF",
+                strokeWidth=2,
             ),
             strokeWidth=3,
             color=accent_color,
@@ -223,6 +252,10 @@ def build_reference_daylight_chart(
                 "date:T",
                 title="Dato",
                 scale=x_scale,
+                axis=alt.Axis(
+                    format="%b",
+                    labelAngle=0,
+                ),
             ),
             y=alt.Y(
                 "Dagslengde (timer):Q",
@@ -270,10 +303,10 @@ def build_reference_daylight_chart(
     solstice_rules = (
         alt.Chart(solstice_data)
         .mark_rule(
-            strokeDash=[6, 4],
-            strokeWidth=2,
-            opacity=0.65,
-            color="#6B7280",
+            strokeDash=[5, 5],
+            strokeWidth=1.5,
+            opacity=0.7,
+            color=REFERENCE_COLOR,
         )
         .encode(
             x=alt.X(
@@ -300,7 +333,9 @@ def build_reference_daylight_chart(
             angle=270,
             align="left",
             baseline="middle",
-            color="#4B5563",
+            color=AXIS_LABEL_COLOR,
+            fontSize=11,
+            fontWeight=600,
         )
         .encode(
             x=alt.X(
@@ -325,8 +360,8 @@ def build_reference_daylight_chart(
             height=360,
             padding={
                 "top": 28,
-                "right": 12,
-                "bottom": 10,
+                "right": 18,
+                "bottom": 12,
                 "left": 8,
             },
         )
@@ -335,10 +370,125 @@ def build_reference_daylight_chart(
             background="transparent",
         )
         .configure_axis(
-            labelFontSize=12,
-            titleFontSize=13,
-            labelPadding=7,
-            titlePadding=12,
+            labelColor=AXIS_LABEL_COLOR,
+            labelFontSize=11,
+            labelPadding=8,
+            titleColor=AXIS_TITLE_COLOR,
+            titleFontSize=12,
+            titleFontWeight=600,
+            titlePadding=14,
+            gridColor=AXIS_GRID_COLOR,
+            gridOpacity=0.8,
+            domainColor=AXIS_DOMAIN_COLOR,
+            tickColor=AXIS_DOMAIN_COLOR,
+        )
+        .configure_view(
+            strokeOpacity=0,
+        )
+    )
+
+    return chart
+
+
+def build_measurement_change_chart(
+    measurements_dataframe: pd.DataFrame,
+    accent_color: str,
+) -> alt.LayerChart:
+    """Build a chart showing change between saved measurements."""
+
+    chart_data = (
+        measurements_dataframe[
+            [
+                "date",
+                "Endring siden sist (minutter)",
+            ]
+        ]
+        .dropna()
+        .copy()
+    )
+
+    bars = (
+        alt.Chart(chart_data)
+        .mark_bar(
+            color=accent_color,
+            opacity=0.9,
+            cornerRadius=4,
+        )
+        .encode(
+            x=alt.X(
+                "date:T",
+                title="Dato",
+                axis=alt.Axis(
+                    format="%d.%m",
+                    labelAngle=0,
+                    labelOverlap="greedy",
+                ),
+            ),
+            y=alt.Y(
+                "Endring siden sist (minutter):Q",
+                title="Endring (minutter)",
+            ),
+            tooltip=[
+                alt.Tooltip(
+                    "date:T",
+                    title="Dato",
+                    format="%d.%m.%Y",
+                ),
+                alt.Tooltip(
+                    "Endring siden sist (minutter):Q",
+                    title="Endring",
+                    format=".1f",
+                ),
+            ],
+        )
+    )
+
+    zero_line = (
+        alt.Chart(
+            pd.DataFrame(
+                {
+                    "zero": [0],
+                }
+            )
+        )
+        .mark_rule(
+            color=AXIS_DOMAIN_COLOR,
+            strokeWidth=1,
+        )
+        .encode(
+            y="zero:Q",
+        )
+    )
+
+    chart = (
+        alt.layer(
+            bars,
+            zero_line,
+        )
+        .properties(
+            height=300,
+            padding={
+                "top": 14,
+                "right": 18,
+                "bottom": 12,
+                "left": 8,
+            },
+        )
+        .configure(
+            background="transparent",
+        )
+        .configure_axis(
+            labelColor=AXIS_LABEL_COLOR,
+            labelFontSize=11,
+            labelPadding=8,
+            titleColor=AXIS_TITLE_COLOR,
+            titleFontSize=12,
+            titleFontWeight=600,
+            titlePadding=14,
+            gridColor=AXIS_GRID_COLOR,
+            gridOpacity=0.8,
+            domainColor=AXIS_DOMAIN_COLOR,
+            tickColor=AXIS_DOMAIN_COLOR,
         )
         .configure_view(
             strokeOpacity=0,

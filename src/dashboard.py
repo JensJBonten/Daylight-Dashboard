@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from dashboard_components import (
+from components import (
     render_charts,
     render_history_table,
     render_latest_metrics,
@@ -17,7 +17,10 @@ from measurement import DaylightMeasurement
 from sqlite_storage import load_measurements
 
 
-def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
+def load_dashboard_data() -> tuple[
+    list[DaylightMeasurement],
+    pd.DataFrame,
+]:
     """Load saved measurements and prepare them for the dashboard."""
 
     measurements = load_measurements()
@@ -29,7 +32,10 @@ def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
         measurement.to_dict()
         for measurement in measurements
     ]
-    measurements_dataframe = pd.DataFrame(measurement_records)
+
+    measurements_dataframe = pd.DataFrame(
+        measurement_records
+    )
 
     measurements_dataframe["date"] = pd.to_datetime(
         measurements_dataframe["date"]
@@ -42,7 +48,9 @@ def load_dashboard_data() -> tuple[list[DaylightMeasurement], pd.DataFrame]:
         / 3600
     )
 
-    measurements_dataframe["Endring siden sist (minutter)"] = (
+    measurements_dataframe[
+        "Endring siden sist (minutter)"
+    ] = (
         pd.to_timedelta(
             measurements_dataframe["daily_increase"]
         ).dt.total_seconds()
@@ -67,7 +75,7 @@ def main() -> None:
 
     st.title("Dagslysdashboard")
 
-    st.write(
+    st.caption(
         "Følg utviklingen i dagslengde, soloppgang og solnedgang "
         "for utvalgte steder i Norge."
     )
@@ -81,15 +89,20 @@ def main() -> None:
         selected_location
     )
 
-    measurements, measurements_dataframe = load_dashboard_data()
+    (
+        measurements,
+        measurements_dataframe,
+    ) = load_dashboard_data()
 
     if measurements_dataframe.empty:
         selected_measurements_dataframe = pd.DataFrame()
     else:
-        selected_measurements_dataframe = measurements_dataframe[
-            measurements_dataframe["location_name"]
-            == selected_location
-        ].copy()
+        selected_measurements_dataframe = (
+            measurements_dataframe[
+                measurements_dataframe["location_name"]
+                == selected_location
+            ].copy()
+        )
 
     if not measurements:
         render_reference_chart(
@@ -103,12 +116,14 @@ def main() -> None:
             "Bruk «Sjekk inn i dag» i sidepanelet "
             "for å registrere den første målingen."
         )
+
         return
 
     filtered_measurements = [
         measurement
         for measurement in measurements
-        if measurement.location_name == selected_location
+        if measurement.location_name
+        == selected_location
     ]
 
     if not filtered_measurements:
@@ -124,6 +139,7 @@ def main() -> None:
             "MET-referansekurven kan fortsatt "
             "brukes som sammenligning."
         )
+
         return
 
     latest_measurement = filtered_measurements[-1]
@@ -147,8 +163,6 @@ def main() -> None:
 
     render_history_table(
         selected_measurements_dataframe,
-        season_theme.background,
-        season_theme.accent,
     )
 
 

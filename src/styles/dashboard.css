@@ -1,0 +1,882 @@
+:root {
+    --dd-canvas: #F5F7FA;
+    --dd-surface: #FFFFFF;
+    --dd-surface-muted: #F8FAFC;
+
+    --dd-text: #17324D;
+    --dd-text-muted: #64748B;
+
+    --dd-border: #D8E1EA;
+    --dd-border-strong: #C7D2DE;
+
+    --dd-primary: #2F6B8A;
+    --dd-primary-soft: #EAF2F6;
+
+    --dd-radius-sm: 8px;
+    --dd-radius-md: 12px;
+    --dd-radius-lg: 16px;
+
+    --dd-shadow-sm:
+        0 1px 2px rgba(15, 23, 42, 0.04);
+
+    --dd-shadow-md:
+        0 6px 20px rgba(15, 23, 42, 0.06);
+}
+
+/* =========================================================
+   APPLICATION SHELL
+   ========================================================= */
+
+[data-testid="stMain"] {
+    background: var(--dd-canvas);
+}
+
+[data-testid="stMainBlockContainer"] {
+    max-width: 1480px;
+    padding-top: 3.25rem;
+    padding-bottom: 4rem;
+    padding-left: clamp(
+        1.5rem,
+        3vw,
+        3.5rem
+    );
+    padding-right: clamp(
+        1.5rem,
+        3vw,
+        3.5rem
+    );
+}
+
+[data-testid="stMain"] h1 {
+    color: var(--dd-text);
+    font-size: clamp(
+        2.15rem,
+        3vw,
+        3rem
+    );
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin-bottom: 0.45rem;
+}
+
+[data-testid="stMain"] h2 {
+    color: var(--dd-text);
+    font-size: clamp(
+        1.45rem,
+        2vw,
+        1.8rem
+    );
+    line-height: 1.2;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+}
+
+[data-testid="stMain"] h3 {
+    color: var(--dd-text);
+    font-weight: 700;
+}
+
+[data-testid="stMain"] p {
+    color: var(--dd-text);
+    line-height: 1.6;
+}
+
+[data-testid="stMain"]
+[data-testid="stCaptionContainer"] p {
+    color: var(--dd-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+[data-testid="stMain"] hr {
+    border-color: var(--dd-border);
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+}
+
+/* =========================================================
+   SEASON OVERVIEW CARD
+   ========================================================= */
+
+[data-testid="stMain"]
+[data-testid="stMarkdownContainer"]
+> div[style*="border-left: 6px solid"] {
+    position: relative;
+    overflow: hidden;
+
+    border-radius:
+        var(--dd-radius-lg) !important;
+
+    padding:
+        1.25rem 1.5rem !important;
+
+    margin:
+        1.75rem 0 2rem 0 !important;
+
+    box-shadow:
+        var(--dd-shadow-md);
+
+    min-height: 96px;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+[data-testid="stMain"]
+[data-testid="stMarkdownContainer"]
+> div[style*="border-left: 6px solid"]::after {
+    content: "";
+
+    position: absolute;
+
+    width: 170px;
+    height: 170px;
+
+    top: -105px;
+    right: -55px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, 0.34);
+
+    pointer-events: none;
+}
+
+[data-testid="stMain"]
+[data-testid="stMarkdownContainer"]
+> div[style*="border-left: 6px solid"]
+> div:first-child {
+    position: relative;
+    z-index: 1;
+
+    color:
+        var(--dd-text) !important;
+
+    font-size:
+        1.2rem !important;
+
+    font-weight:
+        800 !important;
+
+    line-height:
+        1.25 !important;
+
+    letter-spacing:
+        -0.015em;
+
+    margin-bottom:
+        0.6rem !important;
+}
+
+[data-testid="stMain"]
+[data-testid="stMarkdownContainer"]
+> div[style*="border-left: 6px solid"]
+> div:last-child {
+    position: relative;
+    z-index: 1;
+
+    color:
+        var(--dd-text-muted) !important;
+
+    font-size:
+        0.9rem !important;
+
+    font-weight:
+        550;
+
+    line-height:
+        1.55 !important;
+}
+
+/* =========================================================
+   KPI CARDS
+   ========================================================= */
+
+/*
+Only Streamlit columns containing a metric become KPI cards.
+This avoids turning normal layout columns into cards.
+*/
+[data-testid="stMain"]
+[data-testid="stColumn"]:has(
+    [data-testid="stMetric"]
+) {
+    position: relative;
+
+    min-height: 142px;
+
+    background:
+        var(--dd-surface) !important;
+
+    border:
+        1px solid
+        var(--dd-border) !important;
+
+    border-radius:
+        var(--dd-radius-lg) !important;
+
+    padding:
+        1rem 1.1rem !important;
+
+    box-shadow:
+        var(--dd-shadow-sm);
+
+    overflow: hidden;
+
+    transition:
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        transform 0.16s ease;
+}
+
+/*
+Small seasonal accent line. The card stays neutral while the
+season still has a visual presence.
+*/
+[data-testid="stMain"]
+[data-testid="stColumn"]:has(
+    [data-testid="stMetric"]
+)::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 3px;
+
+    background:
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        );
+
+    opacity: 0.9;
+}
+
+[data-testid="stMain"]
+[data-testid="stColumn"]:has(
+    [data-testid="stMetric"]
+):hover {
+    border-color:
+        var(--dd-border-strong) !important;
+
+    box-shadow:
+        var(--dd-shadow-md);
+
+    transform:
+        translateY(-1px);
+}
+
+/*
+The column itself owns the card, so Streamlit's metric should
+not add another visual surface.
+*/
+[data-testid="stMain"]
+[data-testid="stColumn"]:has(
+    [data-testid="stMetric"]
+)
+[data-testid="stMetric"] {
+    background:
+        transparent !important;
+
+    border:
+        none !important;
+
+    padding:
+        0 !important;
+}
+
+/* KPI labels */
+[data-testid="stMain"]
+[data-testid="stMetricLabel"] {
+    margin-bottom:
+        0.35rem;
+}
+
+[data-testid="stMain"]
+[data-testid="stMetricLabel"] p {
+    color:
+        var(--dd-text-muted) !important;
+
+    font-size:
+        0.78rem !important;
+
+    font-weight:
+        700 !important;
+
+    line-height:
+        1.3 !important;
+
+    letter-spacing:
+        0.035em;
+
+    text-transform:
+        uppercase;
+}
+
+/* KPI values */
+[data-testid="stMain"]
+[data-testid="stMetricValue"],
+[data-testid="stMain"]
+[data-testid="stMetricValue"] > div {
+    color:
+        var(--dd-text) !important;
+
+    font-size:
+        clamp(
+            1.65rem,
+            2.3vw,
+            2.15rem
+        ) !important;
+
+    font-weight:
+        800 !important;
+
+    line-height:
+        1.12 !important;
+
+    letter-spacing:
+        -0.025em;
+}
+
+/*
+Captions inside KPI cards are more compact than normal main
+page captions.
+*/
+[data-testid="stMain"]
+[data-testid="stColumn"]:has(
+    [data-testid="stMetric"]
+)
+[data-testid="stCaptionContainer"] p {
+    color:
+        var(--dd-text-muted) !important;
+
+    font-size:
+        0.78rem !important;
+
+    line-height:
+        1.35 !important;
+}
+
+/* =========================================================
+   FOURTH KPI CARD
+   ========================================================= */
+
+/*
+Preserve the long-value protection from the earlier KPI work.
+*/
+.st-key-change_metric_card
+[data-testid="stMetricValue"],
+.st-key-change_metric_card
+[data-testid="stMetricValue"] > div {
+    max-width:
+        100% !important;
+
+    font-size:
+        clamp(
+            1.35rem,
+            1.75vw,
+            1.75rem
+        ) !important;
+
+    line-height:
+        1.15 !important;
+
+    white-space:
+        normal !important;
+
+    overflow:
+        visible !important;
+
+    text-overflow:
+        clip !important;
+
+    word-break:
+        normal !important;
+}
+
+/*
+Small navigation button inside the toggleable KPI card.
+*/
+.st-key-change_metric_card
+[data-testid="stButton"] > button {
+    min-height:
+        30px !important;
+
+    height:
+        30px !important;
+
+    padding:
+        0 0.4rem !important;
+
+    background:
+        var(--dd-surface-muted) !important;
+
+    color:
+        var(--dd-text) !important;
+
+    border:
+        1px solid
+        var(--dd-border) !important;
+
+    border-radius:
+        var(--dd-radius-sm) !important;
+
+    box-shadow:
+        none !important;
+}
+
+.st-key-change_metric_card
+[data-testid="stButton"] > button:hover {
+    background:
+        var(--dd-primary-soft) !important;
+
+    border-color:
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        ) !important;
+}
+
+.st-key-change_metric_card
+[data-testid="stButton"] button p {
+    color:
+        inherit !important;
+
+    font-size:
+        0.9rem !important;
+
+    font-weight:
+        700 !important;
+}
+
+/* =========================================================
+   SIDEBAR SHELL
+   ========================================================= */
+
+[data-testid="stSidebar"] {
+    background:
+        var(--dd-surface-muted) !important;
+
+    border-right:
+        1px solid
+        var(--dd-border) !important;
+
+    box-shadow:
+        4px 0 18px
+        rgba(15, 23, 42, 0.035);
+}
+
+[data-testid="stSidebarContent"] {
+    padding-top: 1.75rem;
+}
+
+[data-testid="stSidebar"]
+> div
+h2 {
+    color:
+        var(--dd-text) !important;
+
+    font-size:
+        1.35rem !important;
+
+    line-height:
+        1.2 !important;
+
+    font-weight:
+        800 !important;
+
+    letter-spacing:
+        -0.02em !important;
+}
+
+/* =========================================================
+   SIDEBAR LABELS + CAPTIONS
+   ========================================================= */
+
+[data-testid="stSidebar"] label p {
+    color:
+        var(--dd-text) !important;
+
+    font-size:
+        0.925rem !important;
+
+    font-weight:
+        700 !important;
+}
+
+[data-testid="stSidebar"]
+[data-testid="stCaptionContainer"] p {
+    color:
+        var(--dd-text-muted) !important;
+
+    font-size:
+        0.84rem !important;
+
+    font-weight:
+        500 !important;
+
+    line-height:
+        1.5 !important;
+}
+
+/* =========================================================
+   SIDEBAR SELECT
+   ========================================================= */
+
+[data-testid="stSidebar"]
+div[data-baseweb="select"] > div {
+    min-height:
+        44px !important;
+
+    background:
+        var(--dd-surface) !important;
+
+    border:
+        1px solid
+        var(--dd-border) !important;
+
+    border-radius:
+        var(--dd-radius-md) !important;
+
+    box-shadow:
+        var(--dd-shadow-sm) !important;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+[data-testid="stSidebar"]
+div[data-baseweb="select"] > div:hover {
+    border-color:
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        ) !important;
+}
+
+[data-testid="stSidebar"]
+div[data-baseweb="select"] span {
+    color:
+        var(--dd-text) !important;
+
+    font-size:
+        0.95rem !important;
+
+    font-weight:
+        600 !important;
+}
+
+/* =========================================================
+   SIDEBAR CHECK-IN BUTTON
+   ========================================================= */
+
+[data-testid="stSidebar"]
+[data-testid="stButton"] > button {
+    width: 100%;
+
+    min-height:
+        44px;
+
+    background:
+        var(--dd-surface) !important;
+
+    color:
+        var(--dd-text) !important;
+
+    border:
+        1px solid
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        ) !important;
+
+    border-radius:
+        var(--dd-radius-md) !important;
+
+    box-shadow:
+        var(--dd-shadow-sm) !important;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+[data-testid="stSidebar"]
+[data-testid="stButton"] > button:hover {
+    background:
+        var(--dd-primary-soft) !important;
+
+    border-color:
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        ) !important;
+
+    box-shadow:
+        0 4px 12px
+        rgba(15, 23, 42, 0.06)
+        !important;
+
+    transform:
+        translateY(-1px);
+}
+
+[data-testid="stSidebar"]
+[data-testid="stButton"] > button:disabled {
+    background:
+        var(--dd-surface-muted) !important;
+
+    color:
+        var(--dd-text-muted) !important;
+
+    border-color:
+        var(--dd-border) !important;
+
+    box-shadow:
+        none !important;
+
+    transform:
+        none !important;
+
+    opacity: 0.72;
+}
+
+[data-testid="stSidebar"]
+[data-testid="stButton"] button p {
+    color:
+        inherit !important;
+
+    font-size:
+        0.925rem !important;
+
+    font-weight:
+        700 !important;
+}
+
+/* =========================================================
+   SIDEBAR EXPANDER
+   ========================================================= */
+
+[data-testid="stSidebar"]
+[data-testid="stExpander"] {
+    background:
+        var(--dd-surface) !important;
+
+    border:
+        1px solid
+        var(--dd-border) !important;
+
+    border-radius:
+        var(--dd-radius-md) !important;
+
+    box-shadow:
+        var(--dd-shadow-sm);
+}
+
+[data-testid="stSidebar"]
+[data-testid="stExpander"]
+details {
+    border-radius:
+        var(--dd-radius-md) !important;
+}
+
+[data-testid="stSidebar"]
+[data-testid="stExpander"]
+summary {
+    color:
+        var(--dd-text) !important;
+
+    font-weight:
+        650 !important;
+}
+
+/* =========================================================
+   CHECK-IN RESULT CARD
+   ========================================================= */
+
+.daylight-result-card {
+    background:
+        var(--dd-surface) !important;
+
+    color:
+        var(--dd-text) !important;
+
+    border:
+        1px solid
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        ) !important;
+
+    border-left:
+        4px solid
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        ) !important;
+
+    border-radius:
+        var(--dd-radius-md) !important;
+
+    padding:
+        12px 14px !important;
+
+    margin:
+        10px 0 12px 0 !important;
+
+    box-shadow:
+        var(--dd-shadow-sm);
+
+    font-size:
+        0.9rem !important;
+
+    font-weight:
+        650 !important;
+
+    line-height:
+        1.45 !important;
+}
+
+.daylight-result-card span,
+.daylight-result-card strong {
+    color:
+        var(--dd-text) !important;
+}
+
+/* =========================================================
+   HISTORY CARD
+   ========================================================= */
+
+/*
+The keyed bordered container remains the card surface. This
+pseudo-element adds the same seasonal accent used by KPI cards.
+*/
+.st-key-history_card {
+    position: relative;
+    overflow: hidden;
+}
+
+.st-key-history_card::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 3px;
+
+    background:
+        var(
+            --dd-season-accent,
+            var(--dd-primary)
+        );
+
+    opacity: 0.9;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 2rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    [data-testid="stMain"] h1 {
+        font-size:
+            2rem !important;
+
+        overflow-wrap:
+            normal !important;
+
+        word-break:
+            keep-all !important;
+    }
+
+    [data-testid="stMain"] h2 {
+        font-size:
+            1.6rem !important;
+    }
+
+    [data-testid="stMain"] h3 {
+        font-size:
+            1.3rem !important;
+    }
+
+    [data-testid="stMain"]
+    [data-testid="stMarkdownContainer"]
+    > div[style*="border-left: 6px solid"] {
+        padding:
+            1rem 1.1rem !important;
+
+        margin:
+            1.25rem 0 1.5rem 0 !important;
+    }
+
+    [data-testid="stMain"]
+    [data-testid="stMarkdownContainer"]
+    > div[style*="border-left: 6px solid"]
+    > div:first-child {
+        font-size:
+            1.05rem !important;
+    }
+
+    [data-testid="stMain"]
+    [data-testid="stMarkdownContainer"]
+    > div[style*="border-left: 6px solid"]
+    > div:last-child {
+        font-size:
+            0.84rem !important;
+    }
+
+    [data-testid="stMain"]
+    [data-testid="stColumn"]:has(
+        [data-testid="stMetric"]
+    ) {
+        min-height:
+            126px;
+
+        padding:
+            0.9rem !important;
+
+        border-radius:
+            var(--dd-radius-md) !important;
+    }
+
+    [data-testid="stMain"]
+    [data-testid="stMetricLabel"] p {
+        font-size:
+            0.7rem !important;
+    }
+
+    [data-testid="stMain"]
+    [data-testid="stMetricValue"],
+    [data-testid="stMain"]
+    [data-testid="stMetricValue"] > div {
+        font-size:
+            1.5rem !important;
+    }
+
+    .st-key-change_metric_card
+    [data-testid="stMetricValue"],
+    .st-key-change_metric_card
+    [data-testid="stMetricValue"] > div {
+        font-size:
+            1.2rem !important;
+    }
+}
