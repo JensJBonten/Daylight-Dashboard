@@ -544,34 +544,17 @@ def render_charts(
     measurements_dataframe: pd.DataFrame,
     accent_color: str,
 ) -> None:
-    """Render day length and daily change as separate chart cards."""
+    """Render the change between saved measurements."""
 
     st.divider()
-    st.subheader("Utvikling i dagslys")
+    st.subheader("Endring mellom målinger")
+
+    st.caption(
+        "Viser hvor mye dagslengden har endret seg "
+        "fra den forrige lagrede målingen."
+    )
 
     with st.container(border=True):
-        st.markdown("#### Dagslengde")
-
-        st.caption(
-            "Utviklingen i antall timer dagslys gjennom perioden."
-        )
-
-        st.line_chart(
-            measurements_dataframe,
-            x="date",
-            y="Dagslengde (timer)",
-            color=accent_color,
-            height=340,
-            use_container_width=True,
-        )
-
-    with st.container(border=True):
-        st.markdown("#### Endring siden sist")
-
-        st.caption(
-            "Forskjellen fra den forrige lagrede målingen."
-        )
-
         st.bar_chart(
             measurements_dataframe,
             x="date",
@@ -580,8 +563,8 @@ def render_charts(
             height=320,
             use_container_width=True,
         )
-
-
+        
+        
 def render_history_table(
     measurements_dataframe: pd.DataFrame,
     background_color: str,
@@ -593,6 +576,18 @@ def render_history_table(
     st.subheader("Historikk")
 
     display_dataframe = measurements_dataframe.copy()
+
+    measurement_count = len(display_dataframe)
+
+    if not display_dataframe.empty:
+        selected_location = display_dataframe[
+        "location_name"
+    ].iloc[0]
+
+    st.caption(
+        f"{measurement_count} lagrede målinger "
+        f"for {selected_location}."
+    )
 
     display_dataframe = display_dataframe.sort_values(
         "date",
@@ -636,21 +631,21 @@ def render_history_table(
     )
 
     visible_columns = [
-        "date",
-        "location_name",
-        "day_length",
-        "sunrise",
-        "sunset",
-        "daily_increase",
-        "total_increase",
+    "date",
+    "day_length",
+    "sunrise",
+    "sunset",
+    "daily_increase",
+    "total_increase",
     ]
 
     display_dataframe = display_dataframe[visible_columns]
 
     display_dataframe = display_dataframe.rename(
         columns={
+            
+            
             "date": "Dato",
-            "location_name": "Sted",
             "day_length": "Dagslengde",
             "sunrise": "Soloppgang",
             "sunset": "Solnedgang",

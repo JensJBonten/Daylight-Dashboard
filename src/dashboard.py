@@ -140,10 +140,6 @@ def main() -> None:
         season_theme.accent,
     )
 
-    st.caption(
-        f"{len(measurements)} lagrede målinger totalt"
-    )
-
     render_charts(
         selected_measurements_dataframe,
         season_theme.accent,
