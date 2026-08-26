@@ -6,7 +6,6 @@ import pandas as pd
 import streamlit as st
 
 from plotting import (
-    build_measurement_change_chart,
     build_reference_daylight_chart,
 )
 from reference_data import (
@@ -90,41 +89,6 @@ def render_reference_chart(
     ):
         st.altair_chart(
             reference_chart,
-            use_container_width=True,
-            theme=None,
-        )
-
-
-def render_charts(
-    measurements_dataframe: pd.DataFrame,
-    accent_color: str,
-) -> None:
-    """Render the change between saved measurements."""
-
-    st.divider()
-
-    st.subheader(
-        "Endring mellom målinger"
-    )
-
-    st.caption(
-        "Viser hvor mye dagslengden har endret seg "
-        "fra den forrige lagrede målingen."
-    )
-
-    change_chart = (
-        build_measurement_change_chart(
-            measurements_dataframe,
-            accent_color,
-        )
-    )
-
-    with st.container(
-        border=True,
-        key="change_chart_card",
-    ):
-        st.altair_chart(
-            change_chart,
             use_container_width=True,
             theme=None,
         )

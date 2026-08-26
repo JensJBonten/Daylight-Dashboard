@@ -4,7 +4,6 @@ import pandas as pd
 import streamlit as st
 
 from components import (
-    render_charts,
     render_history_table,
     render_latest_metrics,
     render_reference_chart,
@@ -46,15 +45,6 @@ def load_dashboard_data() -> tuple[
             measurements_dataframe["day_length"]
         ).dt.total_seconds()
         / 3600
-    )
-
-    measurements_dataframe[
-        "Endring siden sist (minutter)"
-    ] = (
-        pd.to_timedelta(
-            measurements_dataframe["daily_increase"]
-        ).dt.total_seconds()
-        / 60
     )
 
     return measurements, measurements_dataframe
@@ -152,11 +142,6 @@ def main() -> None:
 
     render_reference_chart(
         selected_location,
-        selected_measurements_dataframe,
-        season_theme.accent,
-    )
-
-    render_charts(
         selected_measurements_dataframe,
         season_theme.accent,
     )
