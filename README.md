@@ -11,10 +11,6 @@ The project started as a small pandas exercise using manually recorded Excel dat
 - [Streamlit Community Cloud](https://daylight-dashboard-jb.streamlit.app/)
 - [Databricks Apps](https://daylight-dashboard-jb-7474660523267861.aws.databricksapps.com/)
 
-## Screenshot
-
-![Daylight Dashboard](docs/dashboard-preview.png)
-
 ## Features
 
 - Sunrise, sunset and daylight length from the MET Norway Sunrise API
