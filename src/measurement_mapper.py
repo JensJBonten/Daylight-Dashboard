@@ -10,7 +10,6 @@ except ImportError:
     from measurement import DaylightMeasurement
 
 
-
 def measurements_from_dataframe(
     daylight_dataframe: pd.DataFrame,
     location_name: str,
@@ -26,10 +25,10 @@ def measurements_from_dataframe(
             sunrise=format_duration(measurement_row["sunrise"]),
             sunset=format_duration(measurement_row["sunset"]),
             daily_increase=format_duration(
-                measurement_row["daily_increase"]
+                measurement_row["change_since_previous_check_in"]
             ),
             total_increase=format_duration(
-                measurement_row["total_increase"]
+                measurement_row["change_since_first_measurement"]
             ),
         )
 

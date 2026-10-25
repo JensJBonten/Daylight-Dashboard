@@ -5,7 +5,6 @@ import csv
 import sqlite3
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATABASE_FILE = PROJECT_ROOT / "data" / "daylight.db"
 DEFAULT_MEASUREMENTS_FILE = (

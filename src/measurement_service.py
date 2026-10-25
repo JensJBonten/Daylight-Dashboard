@@ -114,17 +114,17 @@ def add_historical_increase_values(
         measurement.location_name,
     )
 
-    daily_increase = "00:00:00"
-    total_increase = "00:00:00"
+    change_since_previous_check_in = "00:00:00"
+    change_since_first_measurement = "00:00:00"
 
     if previous_measurement is not None:
-        daily_increase = calculate_duration_difference(
+        change_since_previous_check_in = calculate_duration_difference(
             measurement.day_length,
             previous_measurement.day_length,
         )
 
     if first_measurement is not None:
-        total_increase = calculate_duration_difference(
+        change_since_first_measurement = calculate_duration_difference(
             measurement.day_length,
             first_measurement.day_length,
         )
@@ -135,6 +135,6 @@ def add_historical_increase_values(
         day_length=measurement.day_length,
         sunrise=measurement.sunrise,
         sunset=measurement.sunset,
-        daily_increase=daily_increase,
-        total_increase=total_increase,
+        daily_increase=change_since_previous_check_in,
+        total_increase=change_since_first_measurement,
     )

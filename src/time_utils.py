@@ -7,9 +7,14 @@ def parse_duration(duration: str) -> timedelta:
     """Convert a positive or negative HH:MM:SS value to timedelta."""
 
     sign = -1 if duration.startswith("-") else 1
-    normalized_duration = duration.lstrip("+-")
+    normalized_duration = duration[1:] if duration.startswith(("+", "-")) else duration
 
     hours, minutes, seconds = normalized_duration.split(":")
+    
+    if not all(part.isdigit() for part in (hours, minutes, seconds)):
+        raise ValueError("Duration must contain only digits and an optional leading sign.")
+    if not (0 <= int(minutes) <= 59 and 0 <= int(seconds) <= 59):
+        raise ValueError("Minutes and seconds must be between 00 and 59.")
 
     parsed_duration = timedelta(
         hours=int(hours),

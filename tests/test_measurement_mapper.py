@@ -12,16 +12,16 @@ def test_measurements_from_dataframe_returns_measurement_list():
                 "day_length": pd.Timedelta(hours=7, minutes=9),
                 "sunrise": pd.Timedelta(hours=8, minutes=54),
                 "sunset": pd.Timedelta(hours=16, minutes=4),
-                "daily_increase": pd.Timedelta(minutes=0),
-                "total_increase": pd.Timedelta(minutes=0),
+                "change_since_previous_check_in": pd.Timedelta(minutes=0),
+                "change_since_first_measurement": pd.Timedelta(minutes=0),
             },
             {
                 "date": pd.Timestamp("2026-01-23"),
                 "day_length": pd.Timedelta(hours=7, minutes=13),
                 "sunrise": pd.Timedelta(hours=8, minutes=52),
                 "sunset": pd.Timedelta(hours=16, minutes=6),
-                "daily_increase": pd.Timedelta(minutes=4),
-                "total_increase": pd.Timedelta(minutes=4),
+                "change_since_previous_check_in": pd.Timedelta(minutes=4),
+                "change_since_first_measurement": pd.Timedelta(minutes=4),
             },
         ]
     )
